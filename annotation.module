@@ -87,7 +87,7 @@ function annotation_load($node) {
 function annotation_link($type, $node = 0, $main) {
   if ($type == "node" && @in_array($node->type, variable_get("annotation_modules", ""))) {
     if ($main) {    
-      $links[] = l(format_plural(annotation_num_all($node->nid), "annotation", "annotations"), "node/view/$node->nid", array("title" => t("View this %t and its annotations", array ("%t" => module_invoke($node->type, "node", "name")))));
+      $links[] = l(format_plural(annotation_num_all($node->nid), "%count annotation", "%count annotations"), "node/view/$node->nid", array("title" => t("View this %t and its annotations", array ("%t" => module_invoke($node->type, "node", "name")))));
     }
     else if (user_access("create annotations")){
       $links[] = l(t("add new annotation"), "node/add/annotation/$node->nid", array("title" => t("Attach your comment to a phrase in this post.")));
