@@ -182,7 +182,7 @@ function annotation_inject(&$node) {
 * lr: require word break left or right
 * l: require word break left
 * r: require word break right
-* no value: match any substring
+* s or no value: match any substring
 */
 function annotation_insertlink($text, $match, $insert, $strcase, $parameter = "") {
 
@@ -202,27 +202,27 @@ function annotation_insertlink($text, $match, $insert, $strcase, $parameter = ""
       $open = substr_count($test, "<a ");
       $close = substr_count($test, "</a>");
       if ($open <= $close) { // Not in an open link
-  $regex = "[[:punct:][:space:][:cntrl:]]";
-  $ok = 1;
+        $regex = "[[:punct:][:space:][:cntrl:]]";
+        $ok = 1;
         switch ($parameter) {
           case "lr": // require word break left or right
               if (!ereg($regex, substr($test, -1)) && !ereg($regex, substr($ende, 0, 1))) {
-    $ok = 0;
+                $ok = 0;
               }
               break;
           case "b": // require word break left and right
               if (!ereg($regex, substr($test, -1)) || !ereg($regex, substr($ende, 0, 1))) {
-    $ok = 0;
+                $ok = 0;
               }
               break;
           case "l":  // require word break left
               if (!ereg($regex, substr($test, -1))) {
-    $ok = 0;
+                $ok = 0;
               }
               break;
           case "r": // require word break right
               if (!ereg($regex, substr($ende, 0, 1))) {
-    $ok = 0;
+                $ok = 0;
               }
               break;
           case "s": // match any substring
