@@ -10,6 +10,13 @@ function annotation_system($field){
   return $system[$field];
 }
 
+function annotation_head($main) {
+  if (variable_get("annotation_replace", "superscript") == "superscript") {
+    $items[] = "\n<style type=\"text/css\"> .annotation { ". variable_get("annotation_css", "vertical-align: super; cursor: help; font-size: xx-small; padding-left: 2px; font-weight: bold") ." }</style>\n";
+    return $items;
+  }
+}  
+
 function annotation_perm() {
   return array ("post annotations", "administer annotations");
 }  
@@ -150,26 +157,21 @@ function annotation_get($nid_2) {
 function annotation_inject(&$node) {
     
   $annotations = annotation_get($node->nid);
-  $match = false;      
   while ($annotation = db_fetch_object($annotations)) {
     // replace with an icon or with superscript HTML        
     if (variable_get("annotation_replace", "superscript") == "superscript")  {
       $replace = l(t(variable_get("annotation_superscript", "i")), "node/view/$annotation->nid", array ("class" => "annotation", "title" => str_replace("\\", "\\\\", htmlentities($annotation->title. " by $annotation->name: ". $annotation->body))));
-    } else {
+    }
+    else {
       $img = "<img align = \"\" src=\"". variable_get("annotation_icon", "misc/annotation.gif"). "\" border=\"0\"/>";
       $replace = l($img, "node/view/$annotation->nid", array ("title" => str_replace("\\", "\\\\", htmlentities($annotation->title. ": ". $annotation->body))));
     }
     $candidate = $annotation->title;        
     $bodynew = annotation_insertlink($node->body, preg_quote($candidate), $replace, variable_get("annotation_case", "0"), variable_get("annotation_match", "b"));
     if ($bodynew !== $node->body) {
-      $match = true;
       $node->body = $bodynew;
     }
   }  
-  // append <style> declaration for CSS style 'annotation'. do this once for posts containing an annotation.    
-  if ($match && variable_get("annotation_replace", "superscript") == "superscript") {
-    $node->body = $node->body. "<style type=\"text/css\"> .annotation { ". variable_get("annotation_css", "vertical-align: super; cursor: help; font-size: xx-small; padding-left: 2px; font-weight: bold") ." }</style>";
-  }
 }  
 
 /**
