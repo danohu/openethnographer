@@ -72,6 +72,9 @@ function annotation_link($type, $node = 0, $main) {
   if ($type == "admin" && user_access("administer annotations")) {
     $links[] = la(t("annotations"), array("mod" => "annotation"));
   }
+  if ($type == "node" && $node->type == "annotation") {
+    $links[] = l(t("read source"), array ("id" => $node->nid_2));
+  }
   return $links ? $links : array();
 }
 
