@@ -1,0 +1,187 @@
+<?php
+
+function annotation_help() {
+  $output .= "<p>tbd</p>";
+  return $output;
+}
+
+function annotation_system($field){
+  $system["description"] = t("Enables users to attach their text to a phrase *within* a node.");
+  return $system[$field];
+}
+
+function annotation_perm() {
+  return array ("post annotations", "administer annotations");
+}  
+
+function annotation_node($field) {
+  $info["name"] = t("annotation");
+  $info["description"] = t("Enables users to attach their text to a phrase *within* a node");
+  return $info[$field];
+}
+
+function annotation_access($op, $node) {
+  if ($op == "view") {
+    return $node->status;
+  }
+  if ($op == "create") {
+    return 1;
+  }
+}
+
+function annotation_view(&$node, $main = 0) {
+  global $theme, $op;
+  
+  // if ($op !== t("Preview")) { // avoiding double display in Preview
+    $theme->node($node, $main);
+  // }  
+}
+
+function annotation_save($op, $node) {
+  if ($op == "approve") {
+    return array("status" => 1, "promote" => 1);
+  }
+  if ($op == "create") {
+    if (user_access("administer nodes")) {
+      return array("body" => filter($node->body), "teaser" => filter($node->teaser), "comment" => 0, "nid_2" => $node->nid_2);
+    }
+    else {
+      return array("body" => filter($node->body), "moderate" => 1, "teaser" => filter($node->teaser), "comment" => 0, "nid_2" => $node->nid_2);
+    }
+  }
+  if ($op == "decline") {
+    return array("status" => 0, "promote" => 0);
+  }
+  if ($op == "update") {
+    return array("body" => filter($node->body), "teaser" => filter($node->teaser), "nid_2" => $node->nid_2);
+  }
+}
+
+function annotation_insert($node) {
+  db_query("INSERT INTO annotation (nid, nid_2) VALUES ('$node->nid', '$node->nid_2')");
+}
+
+function annotation_update($node) {
+  db_query("UPDATE annotation SET nid_2 = '$node->nid_2' WHERE nid = '$node->nid'");
+}
+
+function annotation_delete($node) {
+  db_query("DELETE FROM annotation WHERE nid = '$node->nid'");
+}
+
+function annotation_load($node) {
+  return  db_fetch_object(db_query("SELECT nid_2 FROM annotation WHERE nid = '$node->nid'"));
+}
+
+function annotation_link($type, $node = 0, $main) {
+  if ($type == "node" && in_array($node->type, unserialize(variable_get("annotation_modules", ""))) && user_access("post annotations")) {
+    $links[] = lm(t("add new annotation"), array("mod" => "node", "type" => "annotation", "op" => "add", "nid_2" => $node->nid), "", array("title" => t("Attach your comment to a phrase in this post.")));
+  }
+  if ($type == "admin" && user_access("administer annotations")) {
+    $links[] = la(t("annotations"), array("mod" => "annotation"));
+  }
+  return $links ? $links : array();
+}
+
+function annotation_form(&$node, &$help, &$error) {
+  global $nid_2, $edit;
+
+  if (isset($node->body)) {
+    if (count(explode(" ", $node->body)) < variable_get("minimum_annotation_size", 0)) {
+      $error["body"] = "<div style=\"color: red; class=\"error\"\">". t("The body of your annotation is too short.") ."</div>";
+    }
+  }
+  else {
+    $help = variable_get("annotation_help", "");
+  }
+  if ($nid_2) {
+    $output .= form_hidden("nid_2", $nid_2);
+    $output .= node_view(node_load(array("nid" => $nid_2)));
+  }
+  else if ($node->nid_2) {
+    $output .= form_hidden("nid_2", $node->nid_2);
+    $output .= node_view(node_load(array("nid" => $node->nid_2)));
+  }  
+  else if (user_access("administer annotations")) {
+    $output .= form_textfield(t("Source node"), "nid_2", $node->nid_2, 3, 6, t("Which node do you wish to annotate."));      
+  }  
+  else {
+    $output .= "<div style=\"color: red; class=\"error\"\">". t("You may only annotate an existing node.") ."</div>";
+  }  
+  if ($node->teaser) {
+    $output .= form_textarea(t("Teaser"), "teaser", $node->teaser, 60, 5, $error["teaser"]);
+  }
+  if (function_exists("taxonomy_node_form")) {
+    $output .= implode("", taxonomy_node_form("annotation", $node));
+  }
+  $output .= form_textarea(t("Body"), "body", $node->body, 60, 15, $error["body"] ? $error["body"] : t("Your reply to the author's post."));
+  return $output;
+}
+
+function annotation_get($nid_2) {
+  return db_query("SELECT n.*, u.name AS name FROM node n LEFT JOIN annotation a ON n.nid = a.nid LEFT JOIN users u ON n.uid = u.uid WHERE a.nid_2 = '$nid_2'");
+}
+
+function annotation_inject(&$node) {
+    
+  $annotations = annotation_get($node->nid);
+  $match = false;      
+  while ($annotation = db_fetch_object($annotations)) {
+    // replace with an icon or with superscript HTML        
+    if (variable_get("annotation_replace", "superscript") == "superscript")  {
+      $replace = l(t(variable_get("annotation_superscript", "i")), array ("id" => $annotation->nid), "node", "", array ("class" => "annotation", "title" => str_replace("\\", "\\\\", htmlentities($annotation->title. " by $annotation->name: ". $annotation->body))));
+    } else {
+      $img = "<img align = \"\" src=\"". variable_get("annotation_icon", "misc/annotation.gif"). "\" border=\"0\"/>";
+      $replace = l($img, array ("id" => $annotation->nid), "node", "", array ("title" => str_replace("\\", "\\\\", htmlentities($annotation->title. ": ". $annotation->body))));
+    }
+    $candidate = $annotation->title;    
+    $bodynew = eregi_replace("([ ,\.\?!:\(\)\r\n\<\>])" . preg_quote($candidate) . "([ ,\.\?!:\(\)\r\n\<\>])", "\\1$candidate$replace\\2", $node->body);
+    if ($bodynew !== $node->body) {
+      $match = true;
+      $node->body = $bodynew;
+    }
+  }  
+  // append <style> declaration for CSS style 'annotation'. do this once for posts containing an annotation.    
+  if ($match && variable_get("annotation_replace", "superscript") == "superscript") {
+    $node->body = $node->body. "<style type=\"text/css\"> .annotation { ". variable_get("annotation_css", "vertical-align: super; cursor: help; font-size: xx-small; padding-left: 2px; font-weight: bold") ." }</style>";
+  }
+}  
+
+function annotation_num_all($nid) {
+  $annotations = db_fetch_object(db_query("SELECT COUNT(a.nid) AS number FROM node n LEFT JOIN annotation a ON n.nid = a.nid WHERE a.nid_2 = '$nid' GROUP BY n.nid"));
+  return $annotations->number ? $annotations->number : 0;
+}
+
+function annotation_admin() {
+  global $edit, $op;
+  
+  $links[] = la("settings", array ("mod" => "system", "op" => "settings"), "annotation");  
+  $links[] = la(t("help"), array ("mod" => "annotation", "op" => "help"));
+  print "<small>". implode(" &middot; ", $links) ."</small><hr />";
+  
+  switch ($op) {  
+    case "help":
+      print annotation_help();
+      break;
+    default:
+      if ($edit) {  
+        $edit["annotation_modules"] = serialize($edit["annotation_modules"]);
+        $msg = system_save($edit);
+        print status($msg);
+      }
+      foreach (module_list() as $file) {
+        if ($name = module_invoke($file, "node", "name")) $names[$file] = $name;
+      }
+      unset($names["annotation"]);
+      $output .= form_select(t("Modules"), "annotation_modules", unserialize(variable_get("annotation_modules", "")), $names, t("Select the node types to which users may attach annotations."), "", 1);
+      $output .= form_select(t("Annotation Indicator"), "annotation_replace", variable_get("annotation_replace", "superscript"), array ("superscript" => "superscript", "icon" => "icon"), t("Display annotations using either a superscript formatted link or an icon."));
+      $output .= form_textfield(t("Superscript"), "annotation_superscript", variable_get("annotation_superscript", "i"), 15, 255, t("If you choose %b1 annotation %b2 above, enter the  superscript text.",array ("%b1" => "<b>", "%b2" => "</b>")));
+      $output .= form_textfield(t("Superscript-CSS"), "annotation_css", variable_get("annotation_css", "vertical-align: super; cursor: help; font-size: xx-small; padding-left: 2px; font-weight: bold"), 15, 255, t("If you choose %b1 superscript %b2 above, enter the CSS that should be used by the user's browser to render the superscript.",array ("%b1" => "<b>", "%b2" => "</b>")));
+      $output .= form_textfield(t("Annotation Icon URL"), "annotation_icon", variable_get("annotation_icon", "misc/annotation.gif"), 50, 255, t("If you choose %b1 icon %b2 above, enter the URL of the annotation icon relative to the root of your Drupal site.", array ("%b1" => "<b>", "%b2" => "</b>")));      
+      $output .= form_textarea("Explanation or submission guidelines", "annotation_help", variable_get("annotation_help", ""), 55, 4, "This text will be displayed at the top of the annotation submission form.  Useful for helping or instructing your users.");
+      $output .= form_select(t("Minimum number of words"), "minimum_annotation_size", variable_get("minimum_annotation_size", 0), array(0 => "0 words", 10 => "10 words", 25 => "25 words",  50 => "50 words", 75 => "75 words", 100 => "100 words", 125 => "125 words",  150 => "150 words", 175 => "175 words", 200 => "200 words"), t("The minimum number of words an annotation should consist of.  This can be useful to rule out submissions that do not meet the site's standards, such as short test posts."));
+      $output .= form_submit("Submit");
+      print form($output);
+  }
+}  
+?>

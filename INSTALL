@@ -1,0 +1,45 @@
+Readme
+------
+
+Enables users to attach their text to a phrase *within* a node. Users type the text which they wish to reference
+into the title of their annotation and their comment into the body. Then, these comments appear
+as balloon help in the browser because annotations make use of the 'title' attribute of the <a> tag. 
+
+Requirements
+------------
+
+Drupal 4.0 or higher
+
+Installation
+------------
+
+1. Copy this module to the Drupal modules/ directory. Drupal should
+automatically detect it. Then enable the module in Site Configuration -> Modules
+
+2. Visit the Admin page and select which modules should use annotations.
+Selecting modules in this menu will add an 'add new annotation' link to these nodes.
+Optionally change the indicator for annotations.
+
+3. Grant permission to post and admin annotations as desired in Admin -> User Mgmt -> User Permissions
+
+Usage
+------------
+
+Add new annotations just as if you were adding comments.
+
+Note to Module Developers
+-----------------------
+
+Annotations often replace comments as a feedback mechanism. In order to disable comments for a given module,
+just add 'comment => 0' to the create and update sections of the _access() hook. See song.module in Contrib for an example.
+
+Credits
+----------
+
+Moshe Weitzman <weitzman@tejasa.com>
+
+TO DO (contributions welcome)
+-----------
+
+need some feedback on the general concept before polishing it.
+
