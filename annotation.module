@@ -29,14 +29,6 @@ function annotation_access($op, $node) {
   }
 }
 
-function annotation_view(&$node, $main = 0) {
-  global $theme, $op;
-  
-  // if ($op !== t("Preview")) { // avoiding double display in Preview
-    $theme->node($node, $main);
-  // }  
-}
-
 function annotation_save($op, $node) {
   if ($op == "approve") {
     return array("status" => 1, "promote" => 1);
@@ -74,7 +66,7 @@ function annotation_load($node) {
 }
 
 function annotation_link($type, $node = 0, $main) {
-  if ($type == "node" && in_array($node->type, unserialize(variable_get("annotation_modules", ""))) && user_access("post annotations")) {
+  if ($type == "node" && @in_array($node->type, unserialize(variable_get("annotation_modules", ""))) && user_access("post annotations")) {
     $links[] = lm(t("add new annotation"), array("mod" => "node", "type" => "annotation", "op" => "add", "nid_2" => $node->nid), "", array("title" => t("Attach your comment to a phrase in this post.")));
   }
   if ($type == "admin" && user_access("administer annotations")) {
@@ -84,8 +76,13 @@ function annotation_link($type, $node = 0, $main) {
 }
 
 function annotation_form(&$node, &$help, &$error) {
-  global $nid_2, $edit;
+  global $nid_2, $edit, $op, $HTTP_REFERER;
 
+  // TODO: this won't get saved by referer save in most cases.  
+  // adds a return link to the post submit page  
+  // $HTTP_REFERER = drupal_url(array ("id" => $nid_2 ? $nid_2 : $node->nid_2));
+  // referer_save();
+  
   if (isset($node->body)) {
     if (count(explode(" ", $node->body)) < variable_get("minimum_annotation_size", 0)) {
       $error["body"] = "<div style=\"color: red; class=\"error\"\">". t("The body of your annotation is too short.") ."</div>";
@@ -94,11 +91,11 @@ function annotation_form(&$node, &$help, &$error) {
   else {
     $help = variable_get("annotation_help", "");
   }
-  if ($nid_2) {
+  if ($nid_2 && $op !== t("Preview")) {
     $output .= form_hidden("nid_2", $nid_2);
     $output .= node_view(node_load(array("nid" => $nid_2)));
   }
-  else if ($node->nid_2) {
+  else if ($node->nid_2 && $op !== t("Preview")) {
     $output .= form_hidden("nid_2", $node->nid_2);
     $output .= node_view(node_load(array("nid" => $node->nid_2)));
   }  

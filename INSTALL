@@ -16,7 +16,9 @@ Installation
 1. Copy this module to the Drupal modules/ directory. Drupal should
 automatically detect it. Then enable the module in Site Configuration -> Modules
 
-2. Visit the Admin page and select which modules should use annotations.
+2. Execute the SQL statement contained in annotation.mysl file.
+
+3. Visit the Admin page and select which modules should use annotations.
 Selecting modules in this menu will add an 'add new annotation' link to these nodes.
 Optionally change the indicator for annotations.
 
