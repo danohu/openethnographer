@@ -90,7 +90,8 @@ function annotation_link($type, $node = 0, $main) {
     $links[] = la(t("annotations"), array("mod" => "annotation"));
   }
   if ($type == "node" && $node->type == "annotation") {
-    $links[] = l(t("read source"), array ("id" => $node->nid_2), "node", "", array ("title" => t("read the post which includes this annotation")));
+    $nid_2 = node_load(array ("nid" => $node->nid_2));    
+    $links[] = l(t("annotation - "). $nid_2->title, array ("id" => $node->nid_2), "node", "", array ("title" => t("read the post which includes this annotation")));
   }
   return $links ? $links : array();
 }
