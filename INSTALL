@@ -10,7 +10,8 @@ You may see this module in action at http://theslip.net/song
 Requirements
 ------------
 
-Drupal CVS circa 1/7/2003 or higher
+Drupal CVS circa 1/7/2003 or higher. Modules must edit their _view() function to add annotation support. Today, 
+only the song.module supports this.
 
 Installation
 ------------
