@@ -3,7 +3,9 @@ Readme
 
 Enables users to attach their text to a phrase *within* a node. Users type the text which they wish to reference
 into the title of their annotation and their comment into the body. Then, these comments appear
-as balloon help in the browser because annotations make use of the 'title' attribute of the <a> tag. 
+as balloon help in the browser because annotations make use of the 'title' attribute of the <a> tag.
+
+You may see this module in action at http://theslip.net/module.php?mod=song
 
 Requirements
 ------------
@@ -39,9 +41,4 @@ Credits
 ----------
 
 Moshe Weitzman <weitzman@tejasa.com>
-
-TO DO (contributions welcome)
------------
-
-need some feedback on the general concept before polishing it.
 

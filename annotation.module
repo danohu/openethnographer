@@ -157,8 +157,8 @@ function annotation_inject(&$node) {
       $img = "<img align = \"\" src=\"". variable_get("annotation_icon", "misc/annotation.gif"). "\" border=\"0\"/>";
       $replace = l($img, array ("id" => $annotation->nid), "node", "", array ("title" => str_replace("\\", "\\\\", htmlentities($annotation->title. ": ". $annotation->body))));
     }
-    $candidate = $annotation->title;    
-    $bodynew = eregi_replace("([ ,\.\?!:\(\)\r\n\<\>])" . preg_quote($candidate) . "([ ,\.\?!:\(\)\r\n\<\>])", "\\1$candidate$replace\\2", $node->body);
+    $candidate = $annotation->title;        
+    $bodynew = annotation_insertlink($node->body, preg_quote($candidate), $replace, variable_get("annotation_case", "0"), variable_get("annotation_match", "b"));
     if ($bodynew !== $node->body) {
       $match = true;
       $node->body = $bodynew;
@@ -169,6 +169,87 @@ function annotation_inject(&$node) {
     $node->body = $node->body. "<style type=\"text/css\"> .annotation { ". variable_get("annotation_css", "vertical-align: super; cursor: help; font-size: xx-small; padding-left: 2px; font-weight: bold") ." }</style>";
   }
 }  
+
+/**
+* this function is duplicated in glossary.module and possibly more
+*
+* insert annoatation link $insert in $text after the first $match that is not inside a link.
+* 
+* $strcase is 0 for case insensitive matching and 1 for case sensitive matching.
+* 
+* $parameter descibes the type of match
+* b: require word break left and right
+* lr: require word break left or right
+* l: require word break left
+* r: require word break right
+* no value: match any substring
+*/
+function annotation_insertlink($text, $match, $insert, $strcase, $parameter = "") {
+
+  if ($strcase) {
+    $first = strpos($text, $match); // first occurrence of $match
+  }
+  else {
+    $temp = stristr($text, $match); 
+    $first = strlen($text) - strlen($temp); // first occurrence of $match
+    if ($temp === false) $first = false;
+  }
+  if ($first !== false) { // no match at all. Requires php post 4.0b3
+    $textlen = strlen($text);
+    while ($first <= $textlen) {
+      $test = substr($text, 0, $first); // text before $match
+      $ende = substr($text, $first + strlen($match)); // text after $match
+      $open = substr_count($test, "<a ");
+      $close = substr_count($test, "</a>");
+      if ($open <= $close) { // Not in an open link
+  $regex = "[[:punct:][:space:][:cntrl:]]";
+  $ok = 1;
+        switch ($parameter) {
+          case "lr": // require word break left or right
+              if (!ereg($regex, substr($test, -1)) && !ereg($regex, substr($ende, 0, 1))) {
+    $ok = 0;
+              }
+              break;
+          case "b": // require word break left and right
+              if (!ereg($regex, substr($test, -1)) || !ereg($regex, substr($ende, 0, 1))) {
+    $ok = 0;
+              }
+              break;
+          case "l":  // require word break left
+              if (!ereg($regex, substr($test, -1))) {
+    $ok = 0;
+              }
+              break;
+          case "r": // require word break right
+              if (!ereg($regex, substr($ende, 0, 1))) {
+    $ok = 0;
+              }
+              break;
+          case "s": // match any substring
+          default: 
+              break;
+        }
+        if ($ok) { // found match
+          // get original string because of case (in)sensitive match.
+          $match = substr($text, strlen($test), strlen($match));
+          $newtext = $test . $match . $insert . $ende; 
+          break;
+        }
+        else { // next try
+          $first = strpos($ende, $match) + $first + strlen($match);
+        }
+      }
+      else { // inside link, need next match
+        $first = strpos($ende, $match) + $first + strlen($match);
+      }
+    }
+  }
+  else { // No match found.
+    $newtext = $text;
+  }
+
+  return $newtext;
+}
 
 function annotation_num_all($nid) {
   $annotations = db_num_rows(db_query("SELECT n.nid FROM node n LEFT JOIN annotation a ON n.nid=a.nid WHERE n.status != '0' AND a.nid_2 = '$nid'"));
@@ -200,7 +281,9 @@ function annotation_admin() {
       $output .= form_select(t("Annotation Indicator"), "annotation_replace", variable_get("annotation_replace", "superscript"), array ("superscript" => "superscript", "icon" => "icon"), t("Display annotations using either a superscript formatted link or an icon."));
       $output .= form_textfield(t("Superscript"), "annotation_superscript", variable_get("annotation_superscript", "i"), 15, 255, t("If you choose %b1 annotation %b2 above, enter the  superscript text.",array ("%b1" => "<b>", "%b2" => "</b>")));
       $output .= form_textfield(t("Superscript-CSS"), "annotation_css", variable_get("annotation_css", "vertical-align: super; cursor: help; font-size: xx-small; padding-left: 2px; font-weight: bold"), 15, 255, t("If you choose %b1 superscript %b2 above, enter the CSS that should be used by the user's browser to render the superscript.",array ("%b1" => "<b>", "%b2" => "</b>")));
-      $output .= form_textfield(t("Annotation Icon URL"), "annotation_icon", variable_get("annotation_icon", "misc/annotation.gif"), 50, 255, t("If you choose %b1 icon %b2 above, enter the URL of the annotation icon relative to the root of your Drupal site.", array ("%b1" => "<b>", "%b2" => "</b>")));      
+      $output .= form_textfield(t("Annotation Icon URL"), "annotation_icon", variable_get("annotation_icon", "misc/annotation.gif"), 50, 255, t("If you choose %b1 icon %b2 above, enter the URL of the annotation icon relative to the root of your Drupal site.", array ("%b1" => "<b>", "%b2" => "</b>")));
+      $output .= form_select(t("Match type"), "annotation_match", variable_get("annotation_match", "match"), array ("b" => "word", "lr" => "right or left substring", "l" => "left substring", "r" => "right substring", "s" => "any substring"), t("Choose the match type of annotation links."));
+      $output .= form_select(t("Case sensitive"), "annotation_case", variable_get("annotation_case", "0"), array ("0" => "case insensitiv", "1" => "case sensitive"), t("Match either case sensitive or not."));
       $output .= form_textarea("Explanation or submission guidelines", "annotation_help", variable_get("annotation_help", t("The title of your annotation should be the exact text upon which you wish to comment.")), 55, 4, "This text will be displayed at the top of the annotation submission form.  Useful for helping or instructing your users.");
       $output .= form_select(t("Minimum number of words"), "minimum_annotation_size", variable_get("minimum_annotation_size", 0), array(0 => "0 words", 10 => "10 words", 25 => "25 words",  50 => "50 words", 75 => "75 words", 100 => "100 words", 125 => "125 words",  150 => "150 words", 175 => "175 words", 200 => "200 words"), t("The minimum number of words an annotation should consist of.  This can be useful to rule out submissions that do not meet the site's standards, such as short test posts."));
       $output .= form_submit("Submit");
