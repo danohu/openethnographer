@@ -27,9 +27,21 @@ function annotation_access($op, $node) {
   if ($op == "create") {
     return 1;
   }
+  if ($op == "decline") {
+    return array("status" => 0);
+  }
+  if ($op == "update") {
+    return 1;
+  }
 }
 
 function annotation_save($op, $node) {
+  global $referer;
+  
+  // adds a 'return' link to the page after an annotation is saved.    
+  $referer = drupal_url(array ("id" => $node->nid_2));
+  session_register("referer");
+  
   if ($op == "approve") {
     return array("status" => 1, "promote" => 1);
   }
@@ -78,14 +90,19 @@ function annotation_link($type, $node = 0, $main) {
   return $links ? $links : array();
 }
 
-function annotation_form(&$node, &$help, &$error) {
-  global $nid_2, $edit, $op, $HTTP_REFERER;
+function annotation_validate($node, &$error) {
+  if ($node->title) {  
+    $nid_2 = node_load(array ("nid" => $node->nid_2));    
+    if (!stristr($nid_2->body, $node->title)) {
+      $error["title"] = t("The <i>Title</i> does not exactly match any phrase in the %type", array ("%type" => module_invoke($nid_2->type, "node", "name")));
+    }
+  }
+  return $node;
+}  
 
-  // TODO: this won't get saved by referer save in most cases.  
-  // adds a return link to the post submit page  
-  // $HTTP_REFERER = drupal_url(array ("id" => $nid_2 ? $nid_2 : $node->nid_2));
-  // referer_save();
-  
+function annotation_form(&$node, &$help, &$error) {
+  global $nid_2, $edit, $op;
+
   if (isset($node->body)) {
     if (count(explode(" ", $node->body)) < variable_get("minimum_annotation_size", 0)) {
       $error["body"] = "<div style=\"color: red; class=\"error\"\">". t("The body of your annotation is too short.") ."</div>";
@@ -94,23 +111,24 @@ function annotation_form(&$node, &$help, &$error) {
   else {
     $help = variable_get("annotation_help", "");
   }
-  if ($nid_2 && $op !== t("Preview")) {
-    $output .= form_hidden("nid_2", $nid_2);
-    $output .= node_view(node_load(array("nid" => $nid_2)));
-  }
-  else if ($node->nid_2 && $op !== t("Preview")) {
-    $output .= form_hidden("nid_2", $node->nid_2);
-    $output .= node_view(node_load(array("nid" => $node->nid_2)));
+  if ($op !== t("Preview")) {
+    $output .= node_view(node_load(array("nid" => $node->nid_2 ? $node->nid_2 : $nid_2)));
   }  
+  if ($nid_2) {
+    $output .= form_hidden("nid_2", $nid_2);
+  }
+  else if ($node->nid_2) {
+    $output .= form_hidden("nid_2", $node->nid_2);
+  }
   else if (user_access("administer annotations")) {
     $output .= form_textfield(t("Source node"), "nid_2", $node->nid_2, 3, 6, t("Which node do you wish to annotate."));      
   }  
   else {
     $output .= "<div style=\"color: red; class=\"error\"\">". t("You may only annotate an existing node.") ."</div>";
   }  
-  if ($node->teaser) {
+  /*if ($node->teaser) {
     $output .= form_textarea(t("Teaser"), "teaser", $node->teaser, 60, 5, $error["teaser"]);
-  }
+  }*/
   if (function_exists("taxonomy_node_form")) {
     $output .= implode("", taxonomy_node_form("annotation", $node));
   }
