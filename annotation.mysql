@@ -1,6 +1,0 @@
-DROP TABLE IF EXISTS annotation;
-CREATE TABLE annotation (
-  nid         int(10) unsigned not null primary key,
-  nid_2       int(8) unsigned not null,  
-  key (nid_2)
-);
