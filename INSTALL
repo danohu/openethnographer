@@ -10,8 +10,7 @@ You may see this module in action at http://theslip.net/song
 Requirements
 ------------
 
-Drupal CVS circa 1/7/2003 or higher. Modules must edit their _view() function to add annotation support. Today, 
-only the song.module supports this.
+Drupal CVS circa 5/25/2003 or 4.2.
 
 Installation
 ------------
@@ -25,7 +24,7 @@ automatically detect it. Then enable the module in Site Configuration -> Modules
 Selecting modules in this menu will add an 'add new annotation' link to these nodes.
 Optionally change the indicator for annotations.
 
-3. Grant permission to post and admin annotations as desired in Admin -> User Mgmt -> User permissions
+3. Grant permission to create and admin annotations as desired in Admin -> User Mgmt -> User permissions
 
 Usage
 ------------

@@ -1,10 +1,5 @@
 <?php
 
-function annotation_help() {
-  $output .= "<p>tbd</p>";
-  return $output;
-}
-
 function annotation_system($field){
   $system["description"] = t("Enables users to attach their text to a phrase *within* a node.");
   return $system[$field];
@@ -28,17 +23,8 @@ function annotation_node($field) {
 }
 
 function annotation_access($op, $node) {
-  if ($op == "view") {
-    return $node->status;
-  }
   if ($op == "create") {
-    return 1;
-  }
-  if ($op == "decline") {
-    return array("status" => 0);
-  }
-  if ($op == "update") {
-    return 1;
+    return user_access("create annotations");
   }
 }
 
@@ -47,22 +33,12 @@ function annotation_save($op, $node) {
   // adds a 'return' link to the page after an annotation is saved.    
   $_SESSION["referer"] = url("node/view/$node->nid_2");
   
-  if ($op == "approve") {
-    return array("status" => 1, "promote" => 1);
-  }
   if ($op == "create") {
-    if (user_access("administer nodes")) {
-      return array("body" => filter($node->body), "teaser" => filter($node->teaser), "comment" => 0, "nid_2" => $node->nid_2);
-    }
-    else {
-      return array("body" => filter($node->body), "moderate" => 1, "teaser" => filter($node->teaser), "comment" => 0, "nid_2" => $node->nid_2);
-    }
+    return array("comment" => 0, "nid_2" => $node->nid_2);
   }
-  if ($op == "decline") {
-    return array("status" => 0, "promote" => 0);
-  }
+
   if ($op == "update") {
-    return array("body" => filter($node->body), "teaser" => filter($node->teaser), "nid_2" => $node->nid_2);
+    return array("nid_2" => $node->nid_2);
   }
 }
 
@@ -83,7 +59,7 @@ function annotation_load($node) {
 }
 
 function annotation_link($type, $node = 0, $main) {
-  if ($type == "node" && @in_array($node->type, variable_get("annotation_modules", ""))) {
+  if ($type == "node" && in_array($node->type, variable_get("annotation_modules", array()))) {
     if ($main) {    
       $links[] = l(format_plural(annotation_num_all($node->nid), "%count annotation", "%count annotations"), "node/view/$node->nid", array("title" => t("View this %t and its annotations", array ("%t" => module_invoke($node->type, "node", "name")))));
     }
@@ -92,7 +68,7 @@ function annotation_link($type, $node = 0, $main) {
     }  
   }
   if ($type == "admin" && user_access("administer annotations")) {
-    // $links[] = l(t("annotations"), "admin/annotation");
+    // nothing yet
   }
   if ($type == "node" && $node->type == "annotation") {
     $nid_2 = node_load(array ("nid" => $node->nid_2));    
@@ -101,28 +77,23 @@ function annotation_link($type, $node = 0, $main) {
   return $links ? $links : array();
 }
 
-function annotation_validate($node, &$error) {
+function annotation_validate($node) {
   if ($node->title) {  
     $nid_2 = node_load(array ("nid" => $node->nid_2));    
     if (!stristr($nid_2->body, $node->title)) {
-      $error["title"] = t("The <i>Title</i> does not exactly match any phrase in the %type", array ("%type" => module_invoke($nid_2->type, "node", "name")));
+      $error["title"] = "<div class=\"error\">". t("The <i>Title</i> does not exactly match any phrase in the %type", array ("%type" => module_invoke($nid_2->type, "node", "name"))). "</div>";
+    }
+    if (count(explode(" ", $node->body)) < variable_get("minimum_annotation_size", 0)) {
+      $error["body"] = "<div class=\"error\">". t("The body of your annotation is too short.") ."</div>";
     }
   }
-  return $node;
+  return $error;
 }  
 
 function annotation_form(&$node, &$help, &$error) {
-  global $edit;
 
   $nid_2 = arg(3);
-  if (isset($node->body)) {
-    if (count(explode(" ", $node->body)) < variable_get("minimum_annotation_size", 0)) {
-      $error["body"] = "<div style=\"color: red; class=\"error\"\">". t("The body of your annotation is too short.") ."</div>";
-    }
-  }
-  else {
-    $help = variable_get("annotation_help", t("The title of your annotation should be the exact text upon which you wish to comment."));
-  }
+  $help = variable_get("annotation_help", t("The title of your annotation should be the exact text upon which you wish to comment."));
   if (arg(1) !== t("Preview")) {
     $output .= node_view(node_load(array("nid" => $node->nid_2 ? $node->nid_2 : $nid_2)));
   }  
@@ -136,11 +107,9 @@ function annotation_form(&$node, &$help, &$error) {
     $output .= form_textfield(t("Source node"), "nid_2", $node->nid_2, 3, 6, t("Which node do you wish to annotate."));      
   }  
   else {
-    $output .= "<div style=\"color: red; class=\"error\"\">". t("You may only annotate an existing node.") ."</div>";
+    $output .= "<div class=\"error\">". t("You may only annotate an existing node.") ."</div>";
   }  
-  /*if ($node->teaser) {
-    $output .= form_textarea(t("Teaser"), "teaser", $node->teaser, 60, 5, $error["teaser"]);
-  }*/
+  
   if (function_exists("taxonomy_node_form")) {
     $output .= implode("", taxonomy_node_form("annotation", $node));
   }
@@ -152,24 +121,28 @@ function annotation_get($nid_2) {
   return db_query("SELECT n.*, u.name AS name FROM node n LEFT JOIN annotation a ON n.nid = a.nid LEFT JOIN users u ON n.uid = u.uid WHERE a.nid_2 = '$nid_2'");
 }
 
-function annotation_inject(&$node) {
-    
-  $annotations = annotation_get($node->nid);
-  while ($annotation = db_fetch_object($annotations)) {
-    // replace with an icon or with superscript HTML        
-    if (variable_get("annotation_replace", "superscript") == "superscript")  {
-      $replace = l(t(variable_get("annotation_superscript", "i")), "node/view/$annotation->nid", array ("class" => "annotation", "title" => str_replace("\\", "\\\\", htmlentities($annotation->title. " by $annotation->name: ". $annotation->body))));
+function annotation_filter($text) {
+  
+  if (strstr(request_uri(), "node/view")) { // wish we had centralized url parsing.
+    $nid = arg(2);
+    $annotations = annotation_get($nid);
+    while ($annotation = db_fetch_object($annotations)) {
+      // replace with an icon or with superscript HTML        
+      if (variable_get("annotation_replace", "superscript") == "superscript")  {
+        $replace = l(t(variable_get("annotation_superscript", "i")), "node/view/$annotation->nid", array ("class" => "annotation", "title" => str_replace("\\", "\\\\", htmlentities($annotation->title. " by $annotation->name: ". $annotation->body))));
+      }
+      else {
+        $img = "<img align = \"\" src=\"". variable_get("annotation_icon", "misc/annotation.gif"). "\" border=\"0\"/>";
+        $replace = l($img, "node/view/$annotation->nid", array ("title" => str_replace("\\", "\\\\", htmlentities($annotation->title. ": ". $annotation->body))));
+      }
+      $candidate = $annotation->title;        
+      $text = annotation_insertlink($text, preg_quote($candidate), $replace, variable_get("annotation_case", "0"), variable_get("annotation_match", "b"));
     }
-    else {
-      $img = "<img align = \"\" src=\"". variable_get("annotation_icon", "misc/annotation.gif"). "\" border=\"0\"/>";
-      $replace = l($img, "node/view/$annotation->nid", array ("title" => str_replace("\\", "\\\\", htmlentities($annotation->title. ": ". $annotation->body))));
-    }
-    $candidate = $annotation->title;        
-    $bodynew = annotation_insertlink($node->body, preg_quote($candidate), $replace, variable_get("annotation_case", "0"), variable_get("annotation_match", "b"));
-    if ($bodynew !== $node->body) {
-      $node->body = $bodynew;
-    }
+  }
+  elseif (strstr(request_uri(), "node/add/annotation")) {
+    // TODO: figure out how to inject during Preview. Maybe do this in the _form() hook
   }  
+  return $text;
 }  
 
 /**
@@ -274,6 +247,11 @@ function annotation_settings() {
   $output .= form_select(t("Minimum number of words"), "minimum_annotation_size", variable_get("minimum_annotation_size", 0), array(0 => "0 words", 10 => "10 words", 25 => "25 words",  50 => "50 words", 75 => "75 words", 100 => "100 words", 125 => "125 words",  150 => "150 words", 175 => "175 words", 200 => "200 words"), t("The minimum number of words an annotation should consist of.  This can be useful to rule out submissions that do not meet the site's standards, such as short test posts."));
   $output .= form_submit("Submit");
   return $output;
-}  
+}
+
+#function annotation_help() {
+#  $output .= "<p>tbd</p>";
+#  return $output;
+#}
 
 ?>
