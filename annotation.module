@@ -79,13 +79,18 @@ function annotation_load($node) {
 
 function annotation_link($type, $node = 0, $main) {
   if ($type == "node" && @in_array($node->type, unserialize(variable_get("annotation_modules", ""))) && user_access("post annotations")) {
-    $links[] = lm(t("add new annotation"), array("mod" => "node", "type" => "annotation", "op" => "add", "nid_2" => $node->nid), "", array("title" => t("Attach your comment to a phrase in this post.")));
+    if ($main) {    
+      $links[] = l(format_plural(annotation_num_all($node->nid), "annotation", "annotations"), array("id" => $node->nid), "node", "", array("title" => t("View this %t and its annotations", array ("%t" => module_invoke($node->type, "node", "name")))));
+    }
+    else {
+      $links[] = lm(t("add new annotation"), array("mod" => "node", "type" => "annotation", "op" => "add", "nid_2" => $node->nid), "", array("title" => t("Attach your comment to a phrase in this post.")));
+    }  
   }
   if ($type == "admin" && user_access("administer annotations")) {
     $links[] = la(t("annotations"), array("mod" => "annotation"));
   }
   if ($type == "node" && $node->type == "annotation") {
-    $links[] = l(t("read source"), array ("id" => $node->nid_2));
+    $links[] = l(t("read source"), array ("id" => $node->nid_2), "node", "", array ("title" => t("read the post which includes this annotation")));
   }
   return $links ? $links : array();
 }
@@ -109,7 +114,7 @@ function annotation_form(&$node, &$help, &$error) {
     }
   }
   else {
-    $help = variable_get("annotation_help", "");
+    $help = variable_get("annotation_help", t("The title of your annotation should be the exact text upon which you wish to comment."));
   }
   if ($op !== t("Preview")) {
     $output .= node_view(node_load(array("nid" => $node->nid_2 ? $node->nid_2 : $nid_2)));
@@ -196,7 +201,7 @@ function annotation_admin() {
       $output .= form_textfield(t("Superscript"), "annotation_superscript", variable_get("annotation_superscript", "i"), 15, 255, t("If you choose %b1 annotation %b2 above, enter the  superscript text.",array ("%b1" => "<b>", "%b2" => "</b>")));
       $output .= form_textfield(t("Superscript-CSS"), "annotation_css", variable_get("annotation_css", "vertical-align: super; cursor: help; font-size: xx-small; padding-left: 2px; font-weight: bold"), 15, 255, t("If you choose %b1 superscript %b2 above, enter the CSS that should be used by the user's browser to render the superscript.",array ("%b1" => "<b>", "%b2" => "</b>")));
       $output .= form_textfield(t("Annotation Icon URL"), "annotation_icon", variable_get("annotation_icon", "misc/annotation.gif"), 50, 255, t("If you choose %b1 icon %b2 above, enter the URL of the annotation icon relative to the root of your Drupal site.", array ("%b1" => "<b>", "%b2" => "</b>")));      
-      $output .= form_textarea("Explanation or submission guidelines", "annotation_help", variable_get("annotation_help", ""), 55, 4, "This text will be displayed at the top of the annotation submission form.  Useful for helping or instructing your users.");
+      $output .= form_textarea("Explanation or submission guidelines", "annotation_help", variable_get("annotation_help", t("The title of your annotation should be the exact text upon which you wish to comment.")), 55, 4, "This text will be displayed at the top of the annotation submission form.  Useful for helping or instructing your users.");
       $output .= form_select(t("Minimum number of words"), "minimum_annotation_size", variable_get("minimum_annotation_size", 0), array(0 => "0 words", 10 => "10 words", 25 => "25 words",  50 => "50 words", 75 => "75 words", 100 => "100 words", 125 => "125 words",  150 => "150 words", 175 => "175 words", 200 => "200 words"), t("The minimum number of words an annotation should consist of.  This can be useful to rule out submissions that do not meet the site's standards, such as short test posts."));
       $output .= form_submit("Submit");
       print form($output);
