@@ -260,7 +260,7 @@ function annotation_num_all($nid) {
   return $annotations;
 }
 
-function annotation_conf_options() {
+function annotation_settings() {
   foreach (module_list() as $file) {
     if ($name = module_invoke($file, "node", "name")) $names[$file] = $name;
   }
