@@ -39,7 +39,7 @@ function annotation_save($op, $node) {
   global $referer;
   
   // adds a 'return' link to the page after an annotation is saved.    
-  $referer = drupal_url(array ("id" => $node->nid_2));
+  $referer = url("node/view/$node->nid_2");
   session_register("referer");
   
   if ($op == "approve") {
@@ -78,20 +78,20 @@ function annotation_load($node) {
 }
 
 function annotation_link($type, $node = 0, $main) {
-  if ($type == "node" && @in_array($node->type, unserialize(variable_get("annotation_modules", "")))) {
+  if ($type == "node" && @in_array($node->type, variable_get("annotation_modules", ""))) {
     if ($main) {    
-      $links[] = l(format_plural(annotation_num_all($node->nid), "annotation", "annotations"), array("id" => $node->nid), "node", "", array("title" => t("View this %t and its annotations", array ("%t" => module_invoke($node->type, "node", "name")))));
+      $links[] = l(format_plural(annotation_num_all($node->nid), "annotation", "annotations"), "node/view/$node->nid", array("title" => t("View this %t and its annotations", array ("%t" => module_invoke($node->type, "node", "name")))));
     }
     else if (user_access("post annotations")){
-      $links[] = lm(t("add new annotation"), array("mod" => "node", "type" => "annotation", "op" => "add", "nid_2" => $node->nid), "", array("title" => t("Attach your comment to a phrase in this post.")));
+      $links[] = l(t("add new annotation"), "node/add/annotation/$node->nid", array("title" => t("Attach your comment to a phrase in this post.")));
     }  
   }
   if ($type == "admin" && user_access("administer annotations")) {
-    $links[] = la(t("annotations"), array("mod" => "annotation"));
+    // $links[] = l(t("annotations"), "admin/annotation");
   }
   if ($type == "node" && $node->type == "annotation") {
     $nid_2 = node_load(array ("nid" => $node->nid_2));    
-    $links[] = l(t("annotation - "). $nid_2->title, array ("id" => $node->nid_2), "node", "", array ("title" => t("read the post which includes this annotation")));
+    $links[] = l(t("annotation - "). $nid_2->title, "node/view/$node->nid_2", array ("title" => t("read the post which includes this annotation")));
   }
   return $links ? $links : array();
 }
@@ -107,8 +107,9 @@ function annotation_validate($node, &$error) {
 }  
 
 function annotation_form(&$node, &$help, &$error) {
-  global $nid_2, $edit, $op;
+  global $edit;
 
+  $nid_2 = arg(3);
   if (isset($node->body)) {
     if (count(explode(" ", $node->body)) < variable_get("minimum_annotation_size", 0)) {
       $error["body"] = "<div style=\"color: red; class=\"error\"\">". t("The body of your annotation is too short.") ."</div>";
@@ -117,7 +118,7 @@ function annotation_form(&$node, &$help, &$error) {
   else {
     $help = variable_get("annotation_help", t("The title of your annotation should be the exact text upon which you wish to comment."));
   }
-  if ($op !== t("Preview")) {
+  if (arg(1) !== t("Preview")) {
     $output .= node_view(node_load(array("nid" => $node->nid_2 ? $node->nid_2 : $nid_2)));
   }  
   if ($nid_2) {
@@ -153,10 +154,10 @@ function annotation_inject(&$node) {
   while ($annotation = db_fetch_object($annotations)) {
     // replace with an icon or with superscript HTML        
     if (variable_get("annotation_replace", "superscript") == "superscript")  {
-      $replace = l(t(variable_get("annotation_superscript", "i")), array ("id" => $annotation->nid), "node", "", array ("class" => "annotation", "title" => str_replace("\\", "\\\\", htmlentities($annotation->title. " by $annotation->name: ". $annotation->body))));
+      $replace = l(t(variable_get("annotation_superscript", "i")), "node/view/$annotation->nid", array ("class" => "annotation", "title" => str_replace("\\", "\\\\", htmlentities($annotation->title. " by $annotation->name: ". $annotation->body))));
     } else {
       $img = "<img align = \"\" src=\"". variable_get("annotation_icon", "misc/annotation.gif"). "\" border=\"0\"/>";
-      $replace = l($img, array ("id" => $annotation->nid), "node", "", array ("title" => str_replace("\\", "\\\\", htmlentities($annotation->title. ": ". $annotation->body))));
+      $replace = l($img, "node/view/$annotation->nid", array ("title" => str_replace("\\", "\\\\", htmlentities($annotation->title. ": ". $annotation->body))));
     }
     $candidate = $annotation->title;        
     $bodynew = annotation_insertlink($node->body, preg_quote($candidate), $replace, variable_get("annotation_case", "0"), variable_get("annotation_match", "b"));
@@ -257,38 +258,22 @@ function annotation_num_all($nid) {
   return $annotations;
 }
 
-function annotation_admin() {
-  global $edit, $op;
-  
-  $links[] = la("settings", array ("mod" => "system", "op" => "settings"), "annotation");  
-  $links[] = la(t("help"), array ("mod" => "annotation", "op" => "help"));
-  print "<small>". implode(" &middot; ", $links) ."</small><hr />";
-  
-  switch ($op) {  
-    case "help":
-      print annotation_help();
-      break;
-    default:
-      if ($edit) {  
-        $edit["annotation_modules"] = serialize($edit["annotation_modules"]);
-        $msg = system_save($edit);
-        print status($msg);
-      }
-      foreach (module_list() as $file) {
-        if ($name = module_invoke($file, "node", "name")) $names[$file] = $name;
-      }
-      unset($names["annotation"]);
-      $output .= form_select(t("Modules"), "annotation_modules", unserialize(variable_get("annotation_modules", "")), $names, t("Select the node types to which users may attach annotations."), "", 1);
-      $output .= form_select(t("Annotation Indicator"), "annotation_replace", variable_get("annotation_replace", "superscript"), array ("superscript" => "superscript", "icon" => "icon"), t("Display annotations using either a superscript formatted link or an icon."));
-      $output .= form_textfield(t("Superscript"), "annotation_superscript", variable_get("annotation_superscript", "i"), 15, 255, t("If you choose %b1 annotation %b2 above, enter the  superscript text.",array ("%b1" => "<b>", "%b2" => "</b>")));
-      $output .= form_textfield(t("Superscript-CSS"), "annotation_css", variable_get("annotation_css", "vertical-align: super; cursor: help; font-size: xx-small; padding-left: 2px; font-weight: bold"), 15, 255, t("If you choose %b1 superscript %b2 above, enter the CSS that should be used by the user's browser to render the superscript.",array ("%b1" => "<b>", "%b2" => "</b>")));
-      $output .= form_textfield(t("Annotation Icon URL"), "annotation_icon", variable_get("annotation_icon", "misc/annotation.gif"), 50, 255, t("If you choose %b1 icon %b2 above, enter the URL of the annotation icon relative to the root of your Drupal site.", array ("%b1" => "<b>", "%b2" => "</b>")));
-      $output .= form_select(t("Match type"), "annotation_match", variable_get("annotation_match", "match"), array ("b" => "word", "lr" => "right or left substring", "l" => "left substring", "r" => "right substring", "s" => "any substring"), t("Choose the match type of annotation links."));
-      $output .= form_select(t("Case sensitive"), "annotation_case", variable_get("annotation_case", "0"), array ("0" => "case insensitiv", "1" => "case sensitive"), t("Match either case sensitive or not."));
-      $output .= form_textarea("Explanation or submission guidelines", "annotation_help", variable_get("annotation_help", t("The title of your annotation should be the exact text upon which you wish to comment.")), 55, 4, "This text will be displayed at the top of the annotation submission form.  Useful for helping or instructing your users.");
-      $output .= form_select(t("Minimum number of words"), "minimum_annotation_size", variable_get("minimum_annotation_size", 0), array(0 => "0 words", 10 => "10 words", 25 => "25 words",  50 => "50 words", 75 => "75 words", 100 => "100 words", 125 => "125 words",  150 => "150 words", 175 => "175 words", 200 => "200 words"), t("The minimum number of words an annotation should consist of.  This can be useful to rule out submissions that do not meet the site's standards, such as short test posts."));
-      $output .= form_submit("Submit");
-      print form($output);
+function annotation_conf_options() {
+  foreach (module_list() as $file) {
+    if ($name = module_invoke($file, "node", "name")) $names[$file] = $name;
   }
+  unset($names["annotation"]);
+  $output .= form_select(t("Modules"), "annotation_modules", variable_get("annotation_modules", ""), $names, t("Select the node types to which users may attach annotations."), "", 1);
+  $output .= form_select(t("Annotation Indicator"), "annotation_replace", variable_get("annotation_replace", "superscript"), array ("superscript" => "superscript", "icon" => "icon"), t("Display annotations using either a superscript formatted link or an icon."));
+  $output .= form_textfield(t("Superscript"), "annotation_superscript", variable_get("annotation_superscript", "i"), 15, 255, t("If you choose %b1 annotation %b2 above, enter the  superscript text.",array ("%b1" => "<b>", "%b2" => "</b>")));
+  $output .= form_textfield(t("Superscript-CSS"), "annotation_css", variable_get("annotation_css", "vertical-align: super; cursor: help; font-size: xx-small; padding-left: 2px; font-weight: bold"), 15, 255, t("If you choose %b1 superscript %b2 above, enter the CSS that should be used by the user's browser to render the superscript.",array ("%b1" => "<b>", "%b2" => "</b>")));
+  $output .= form_textfield(t("Annotation Icon URL"), "annotation_icon", variable_get("annotation_icon", "misc/annotation.gif"), 50, 255, t("If you choose %b1 icon %b2 above, enter the URL of the annotation icon relative to the root of your Drupal site.", array ("%b1" => "<b>", "%b2" => "</b>")));
+  $output .= form_select(t("Match type"), "annotation_match", variable_get("annotation_match", "match"), array ("b" => "word", "lr" => "right or left substring", "l" => "left substring", "r" => "right substring", "s" => "any substring"), t("Choose the match type of annotation links."));
+  $output .= form_select(t("Case sensitive"), "annotation_case", variable_get("annotation_case", "0"), array ("0" => "case insensitive", "1" => "case sensitive"), t("Match either case sensitive or not."));
+  $output .= form_textarea("Explanation or submission guidelines", "annotation_help", variable_get("annotation_help", t("The title of your annotation should be the exact text upon which you wish to comment.")), 55, 4, "This text will be displayed at the top of the annotation submission form.  Useful for helping or instructing your users.");
+  $output .= form_select(t("Minimum number of words"), "minimum_annotation_size", variable_get("minimum_annotation_size", 0), array(0 => "0 words", 10 => "10 words", 25 => "25 words",  50 => "50 words", 75 => "75 words", 100 => "100 words", 125 => "125 words",  150 => "150 words", 175 => "175 words", 200 => "200 words"), t("The minimum number of words an annotation should consist of.  This can be useful to rule out submissions that do not meet the site's standards, such as short test posts."));
+  $output .= form_submit("Submit");
+  return $output;
 }  
+
 ?>

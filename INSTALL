@@ -5,12 +5,12 @@ Enables users to attach their text to a phrase *within* a node. Users type the t
 into the title of their annotation and their comment into the body. Then, these comments appear
 as balloon help in the browser because annotations make use of the 'title' attribute of the <a> tag.
 
-You may see this module in action at http://theslip.net/module.php?mod=song
+You may see this module in action at http://theslip.net/song
 
 Requirements
 ------------
 
-Drupal 4.0 or higher
+Drupal CVS circa 1/7/2003 or higher
 
 Installation
 ------------
@@ -20,11 +20,11 @@ automatically detect it. Then enable the module in Site Configuration -> Modules
 
 2. Execute the SQL statement contained in annotation.mysl file.
 
-3. Visit the Admin page and select which modules should use annotations.
+3. Visit the Admin > Site Configuration page and select which modules should use annotations.
 Selecting modules in this menu will add an 'add new annotation' link to these nodes.
 Optionally change the indicator for annotations.
 
-3. Grant permission to post and admin annotations as desired in Admin -> User Mgmt -> User Permissions
+3. Grant permission to post and admin annotations as desired in Admin -> User Mgmt -> User permissions
 
 Usage
 ------------
