@@ -43,11 +43,9 @@ function annotation_access($op, $node) {
 }
 
 function annotation_save($op, $node) {
-  global $referer;
-  
+    
   // adds a 'return' link to the page after an annotation is saved.    
-  $referer = url("node/view/$node->nid_2");
-  session_register("referer");
+  $_SESSION["referer"] = url("node/view/$node->nid_2");
   
   if ($op == "approve") {
     return array("status" => 1, "promote" => 1);
