@@ -1,0 +1,5 @@
+name = Annotation
+description = Allows people to annotate sections of a node.
+core = 6.x
+dependencies[] = jquery_update
+dependencies[] = jquery_ui

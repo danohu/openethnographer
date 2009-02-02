@@ -1,0 +1,58 @@
+<?php
+
+function annotation_install() {
+  drupal_install_schema('annotation');
+}
+
+function annotation_schema() {
+  return array(
+    'annotation' => array(
+      'description' => t('Stores annotation-related information.'),
+      'fields' => array(
+        'cid' => array(
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+          'default' => 0,
+          'description' => t('Foreign key: {comments}.cid'),
+        ),
+        'vid' => array(
+          'type' => 'int', 
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+          'default' => 0,
+          'description' => t('Foreign key: {node}.vid'),
+        ),
+        'offset' => array(
+          'type' => 'int', 
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+          'default' => 0,
+          'description' => t('Selected text: offset'),
+        ),
+        'length' => array(
+          'type' => 'int', 
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+          'default' => 0,
+          'description' => t('Selected text: length'),
+        ),
+				'string' => array(
+					'type' => 'text',
+					'not null' => TRUE,
+					'default' => '',
+					'description' => t('Selected text: string'),
+				),
+      ),
+      'primary key' => array('vid', 'cid', 'offset'),
+      'indexes' => array(
+        'cid' => array('cid'),
+        'vid' => array('vid'),
+      ),
+    ),
+  );
+}
+
+function annotation_uninstall() {
+  drupal_uninstall_schema('annotation');
+}
