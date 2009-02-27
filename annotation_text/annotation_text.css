@@ -1,0 +1,59 @@
+
+/* Largest comes first as it is the default */
+.annotation-text,
+.annotation-text-12 {
+  cursor: pointer;
+  background:#FF6500 none repeat scroll 0 0;
+}
+
+.annotation-text-1 {
+  background:#FFFDC5 none repeat scroll 0 0;
+}
+
+.annotation-text-2 {
+  background:#FFF09A none repeat scroll 0 0;
+}
+
+.annotation-text-3 {
+  background:#FFFF66 none repeat scroll 0 0;
+}
+
+.annotation-text-4 {
+  background:#FFE26F none repeat scroll 0 0;
+}
+
+.annotation-text-5 {
+  background:#FFD441 none repeat scroll 0 0;
+}
+
+.annotation-text-6 {
+  background:#FFC614 none repeat scroll 0 0;
+}
+
+.annotation-text-7 {
+  background:#FFB600 none repeat scroll 0 0;
+}
+
+.annotation-text-8 {
+  background:#FFA800 none repeat scroll 0 0;
+}
+
+.annotation-text-9 {
+  background:#FF9900 none repeat scroll 0 0;
+}
+
+.annotation-text-10 {
+  background:#FF8B00 none repeat scroll 0 0;
+}
+
+.annotation-text-11 {
+  background:#FF7B00 none repeat scroll 0 0;
+}
+
+.annotation-text-selected {
+  color: #FF0000;
+}
+
+.annotation-text-selected-link {
+  cursor: pointer;
+}

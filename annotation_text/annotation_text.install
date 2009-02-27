@@ -1,13 +1,13 @@
 <?php
 
-function annotation_install() {
-  drupal_install_schema('annotation');
+function annotation_text_install() {
+  drupal_install_schema('annotation_text');
 }
 
-function annotation_schema() {
+function annotation_text_schema() {
   return array(
-    'annotation' => array(
-      'description' => t('Stores annotation-related information.'),
+    'annotation_text' => array(
+      'description' => t('Stores annotation_text-related information.'),
       'fields' => array(
         'cid' => array(
           'type' => 'int',
@@ -53,6 +53,6 @@ function annotation_schema() {
   );
 }
 
-function annotation_uninstall() {
-  drupal_uninstall_schema('annotation');
+function annotation_text_uninstall() {
+  drupal_uninstall_schema('annotation_text');
 }
