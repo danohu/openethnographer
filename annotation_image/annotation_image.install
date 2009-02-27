@@ -1,0 +1,31 @@
+<?php
+
+function annotation_image_install() {
+  drupal_install_schema('annotation_image');
+
+  // todo make node type
+}
+
+function annotation_image_uninstall() {
+  drupal_uninstall_schema('annotation_image');
+}
+
+function annotation_image_schema() {
+  return array(
+    'annotation_image_node_field' => array(
+      'fields' => array(
+        'field_name' => array(
+          'type' => 'varchar',
+          'length' => 32,
+          'not null' => TRUE,
+        ),
+        'annotate' => array(
+          'type' => 'int',
+          'size' => 'tiny',
+          'not null' => TRUE,
+        ),
+      ),
+      'primary key' => array('field_name'),
+    ),
+  );
+}

@@ -1,0 +1,5 @@
+name = Annotation image
+description = Allows people to annotate images.
+core = 6.x
+dependencies[] = annotation
+dependencies[] = imagefield
