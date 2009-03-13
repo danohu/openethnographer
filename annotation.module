@@ -1,18 +1,16 @@
 <?php
 
 /**
- * Add JS common to annotation modules
+ * Add JS common to annotation modules.
  */
 function annotation_add_js() {
-  // manually link to BT js as it doesn't provide a method yet
-  drupal_add_js(drupal_get_path('module', 'beautytips') .'/jquery.bt.js');
-  drupal_add_js(drupal_get_path('module', 'beautytips') .'/other_libs/excanvas_002/excanvas.js');
+  drupal_add_js(drupal_get_path('module', 'annotation') .'/bt-0.9.1/jquery.bt.js');
+  drupal_add_js(drupal_get_path('module', 'annotation') .'/bt-0.9.1/other_libs/excanvas_0002/excanvas.js');
 }
 
 /**
- * Add CSS common to annotation modules
+ * Add CSS common to annotation modules.
  */
 function annotation_add_css() {
-  // manually link to BT css as it doesn't provide a method yet
-  drupal_add_css(drupal_get_path('module', 'beautytips') .'/jquery.bt.css');
+  drupal_add_css(drupal_get_path('module', 'annotation') .'/bt-0.9.1/jquery.bt.css');
 }
