@@ -37,8 +37,7 @@ function annotation_text_node_info() {
  * Node form for default annotation text node type
  */
 function annotation_text_form(&$node, $form_state) {
-  $form = node_content_form($node, $form_state);
-  return $form;
+  return node_content_form($node, $form_state);
 }
 
 /**
@@ -48,14 +47,8 @@ function annotation_text_annotate_form_access($node) {
   return (user_access('post comments') && (node_comment_mode($node->nid) == COMMENT_NODE_READ_WRITE));
 }
 
-/**
- * AJAX comment form
- */
-function annotation_text_annotate_form($node) {
-  return drupal_get_form('comment_form', array('nid' => $node->nid));
-}
 function annotation_text_annotate_ajax_form($node) {
-  print annotation_text_annotate_form($node);
+  print drupal_get_form('comment_form', array('nid' => $node->nid));
   exit();
 }
 
@@ -124,7 +117,6 @@ function _annotation_text_add_context($text, $node) {
 function annotation_text_comment(&$a1, $op) {
   switch ($op) {
     case 'insert':
-      //drupal_set_message(__FUNCTION__ .': '. __LINE__ .' -- '. print_r($a1, TRUE));
       $node = node_load($a1['nid']);
 
       if (!empty($a1['annotation_text'])) {
@@ -137,6 +129,7 @@ function annotation_text_comment(&$a1, $op) {
       cache_clear_all($node->format .':'. md5($node->body), 'cache_filter');
       cache_clear_all($node->format .':'. md5($node->teaser), 'cache_filter');
       break;
+
     case 'delete':
       db_query('DELETE FROM {annotation_text} WHERE cid=%d', $a1->cid);
       break;
@@ -182,29 +175,28 @@ function annotation_text_filter($op, $delta = 0, $format = -1, $text = '', $cach
       return array(
         0 => t('Annotation filter'),
       );
+
     case 'description':
       switch ($delta) {
         case 0:
           return t('Attaches user annotation_texts to text.');
+
         default:
           return;
       }
+
     case 'process':
       switch ($delta) {
         case 0:
           return annotation_text_filter_process($text, $format);
+
         default:
           return $text;
       }
-    case 'settings':
-      switch ($delta) {
-        //case 0:
-          //return annotation_text_filter_settings($format);
-        default:
-          return;
-      }
+
     case 'no cache':
       return TRUE; // TODO: Don't cache for now
+
     default:
       return $text;
   }
@@ -265,7 +257,6 @@ function annotation_text_filter_process($text, $format) {
               'length' => $annotation->length - ($offset - $annotation->corrected_offset),
               'cids' => array($annotation->cid => $annotation->cid),
             );
-            //drupal_set_message(__FUNCTION__ .': '. __LINE__ .' -- '. print_r($annotation, TRUE));
             $found = TRUE;
             break;
           }
