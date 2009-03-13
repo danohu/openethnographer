@@ -14,3 +14,23 @@ function annotation_add_js() {
 function annotation_add_css() {
   drupal_add_css(drupal_get_path('module', 'annotation') .'/bt-0.9.1/jquery.bt.css');
 }
+
+function annotation_menu() {
+  return array(
+    'node/%node/annotation_form_js' => array(
+      'page callback' => 'annotation_form_js',
+      'page arguments' => array(1),
+      'access callback' => 'annotation_form_js_access',
+      'access arguments' => array(1),
+    ),
+  );
+}
+
+function annotation_form_js_access($node) {
+  return (user_access('post comments') && (node_comment_mode($node->nid) == COMMENT_NODE_READ_WRITE));
+}
+
+function annotation_form_js($node) {
+  print drupal_get_form('comment_form', array('nid' => $node->nid));
+  exit();
+}

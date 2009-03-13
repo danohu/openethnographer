@@ -1,4 +1,3 @@
-
 Drupal.behaviors.annotation_text = function (context) {
   if (Drupal.settings.annotation_text && Drupal.settings.annotation_text.sections) {
     for (idx in Drupal.settings.annotation_text.sections) {
@@ -153,7 +152,7 @@ function annotation_text_annotate() {
       width: 490,
       clickAnywhereToClose: false,
       closeWhenOthersOpen: true,
-      ajaxPath: Drupal.settings.annotation_text.url.form + '/' + Drupal.settings.annotation_text.nid,
+      ajaxPath: Drupal.settings.annotation_text.url.form,
       postShow: function() {
         // hide subject field
         $('#edit-subject-wrapper', '.bt-content #comment-form').hide();
