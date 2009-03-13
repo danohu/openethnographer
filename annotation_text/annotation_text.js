@@ -154,62 +154,17 @@ function annotation_text_annotate() {
       closeWhenOthersOpen: true,
       ajaxPath: Drupal.settings.annotation_text.url.form,
       postShow: function() {
-        // hide subject field
-        $('#edit-subject-wrapper', '.bt-content #comment-form').hide();
-        
-        // fill hidden form elements with offset data
-        annotation_text_annotate_fill_form('.bt-content #comment-form');
+        // Fill hidden form elements with offset data.
+        var $form = $('.bt-content #annotation-form');
+        var $selection = $('.annotation-text-selected');
+        var offset = $selection.data('annotation_text_offset');
+        $('#edit-annotation-text-offset', $form).attr('value', offset.offset);
+        $('#edit-annotation-text-length', $form).attr('value', offset.len);
+        $('#edit-annotation-text-string', $form).attr('value', $selection.text());
       }
     }).btOn();
   
   return false;
-}
-
-/**
- * fill hidden form elements with offset data
- */
-function annotation_text_annotate_fill_form(forms) {
-  // we should only see one form, but to be on the safe side...
-  $(forms).each(function() {
-    var form = this;
-    
-    // remove old offset data form elements
-    var idx = 0;
-    while (true) {
-      if ($('#edit-annotation-text-' + idx + '-offset', form).length) {
-        $('#edit-annotation-text-' + idx + '-offset', form).remove();
-        $('#edit-annotation-text-' + idx + '-length', form).remove();
-        $('#edit-annotation-text-' + idx + '-string', form).remove();
-      }
-      else {
-        break;
-      }
-      idx++;
-    }
-  
-    // set subject to as much of the selected text as possible
-    $(':input[name=subject]', form).each(function() {
-      var max = 64;
-      if ($(this).attr('maxlength')) {
-        max = $(this).attr('maxlength');
-      }
-      else if ($(this).attr('size')) {
-        max = $(this).attr('size');
-      }
-      $(this).val('"' + $('.annotation-text-selected').text().slice(0, max-6) + '..."');
-    });
-  
-    // add offset data form elements
-    var idx = 0;
-    $('.annotation-text-selected').each(function() {
-      var data = $(this).data('annotation_text_offset');
-      $(form).append('<input type="hidden" id="edit-annotation-text-' + idx + '-offset" name="annotation_text[' + idx + '][offset]" value="' + data.offset + '">');
-      $(form).append('<input type="hidden" id="edit-annotation-text-' + idx + '-length" name="annotation_text[' + idx + '][length]" value="' + data.len + '">');
-      $(form).append('<input type="hidden" id="edit-annotation-text-' + idx + '-string" name="annotation_text[' + idx + '][string]" value="' + $(this).text() + '">');
-    
-      idx++;
-    });
-  });
 }
 
 /**

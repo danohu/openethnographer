@@ -47,7 +47,7 @@ function annotation_text_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
             'annotation_text' => array(
               'sections' => array('#node-'. $node->nid .' .annotation-text-body' => 'node'),
               'url' => array(
-                'form' => url('node/'. $node->nid .'/annotation_form_js'),
+                'form' => url('node/'. $node->nid .'/annotation_form_js/annotation_text'),
               ),
             )
           ),
@@ -87,10 +87,10 @@ function annotation_text_comment(&$a1, $op) {
     case 'insert':
       $node = node_load($a1['nid']);
 
-      if (!empty($a1['annotation_text'])) {
-        foreach ($a1['annotation_text'] as $idx => $annotation_text) {
-          db_query('INSERT INTO {annotation_text} (cid, vid, offset, length, string) VALUES (%d, %d, %d, %d, "%s")', $a1['cid'], $node->vid, $annotation_text['offset'], $annotation_text['length'], $annotation_text['string']);
-        }
+      if (isset($a1['annotation_text'])) {
+        $a1['annotation_text']['cid'] = $a1['cid'];
+        $a1['annotation_text']['vid'] = $node->vid;
+        drupal_write_record('annotation_text', $a1['annotation_text']);
       }
 
       // clear filter cache for this node
@@ -108,26 +108,12 @@ function annotation_text_comment(&$a1, $op) {
  * Implementation of hook_FORM_ID_form_alter
  * Add annotation information into comment form, so it's not lost
  */
-function annotation_text_form_comment_form_alter(&$form, &$form_state) {
-  // add annotation offset form elements if found in POST
-  if (!empty($form_state['post']['annotation_text'])) {
-    $form['annotation_text'] = array(
-      '#tree' => 'true',
-    );
-    foreach ($form_state['post']['annotation_text'] as $idx => $annotation_text) {
-      $form['annotation_text'][$idx]['offset'] = array(
-        '#type' => 'hidden',
-        '#value' => $form_state['post']['annotation_text'][$idx]['offset'],
-      );
-      $form['annotation_text'][$idx]['length'] = array(
-        '#type' => 'hidden',
-        '#value' => $form_state['post']['annotation_text'][$idx]['length'],
-      );
-      $form['annotation_text'][$idx]['string'] = array(
-        '#type' => 'hidden',
-        '#value' => $form_state['post']['annotation_text'][$idx]['string'],
-      );
-    }
+function annotation_text_form_annotation_form_alter(&$form, &$form_state) {
+  if ($form['#parameters'][3] == 'annotation_text') {
+    $form['annotation_text'] = array('#tree' => TRUE);
+    $form['annotation_text']['offset'] = array('#type' => 'hidden');
+    $form['annotation_text']['length'] = array('#type' => 'hidden');
+    $form['annotation_text']['string'] = array('#type' => 'hidden');
   }
 }
 
