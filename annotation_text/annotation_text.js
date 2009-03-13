@@ -1,5 +1,15 @@
 Drupal.behaviors.annotation_text = function (context) {
   if (Drupal.settings.annotation_text && Drupal.settings.annotation_text.sections) {
+    // Set default annotation style, overridable with drupal_add_js().
+    Drupal.settings.annotationBtStyle = jQuery.extend({
+      width: 250,
+      fill: '#fff',
+      strokeStyle: '#777',
+      spikeLength: 8,
+      spikeGirth: 6,
+      positions: ['bottom'],
+    }, Drupal.settings.annotationBtStyle);
+
     for (idx in Drupal.settings.annotation_text.sections) {
       $(idx + ':not(.annotation-text-processed)', context).each(function () {
         $(this).addClass('annotation-text-processed');
@@ -46,15 +56,14 @@ function annotation_text_attach_click(e) {
     }
     
     // add BT bubble containing comments
-    $(this).data('annotation_text_comments', comments).bt({
+    $(this).data('annotation_text_comments', comments).bt(jQuery.extend({
       trigger: 'click',
       contentSelector: "$('" + selector + "')",
-      width: 400,
       closeWhenOthersOpen: true,
       postShow: function() {
         $(selector, $('.bt-content')).addClass(color_class);
       }
-    });
+    }, Drupal.settings.annotationBtStyle));
   });
 }
 
@@ -64,10 +73,10 @@ function annotation_text_attach_click(e) {
 function annotation_text_attach_mouseup(e) {
   $(e).bind("mouseup", function(){
     localContext = this;
-    
+
     // wrap selection in span, so it's selectable with jquery
     var sel = $(this).wrapSelection().addClass('annotation-text-selected');
-        
+
     // empty selection?
     if (!sel.length) {
       // remove previous selections
@@ -147,22 +156,21 @@ function annotation_text_select_node(e) {
  */
 function annotation_text_annotate() {
   // attach BT bubble to first selected span
-  $('.annotation-text-selected:first').bt({
-      trigger: 'none',
-      width: 490,
-      clickAnywhereToClose: false,
-      closeWhenOthersOpen: true,
-      ajaxPath: Drupal.settings.annotation_text.url.form,
-      postShow: function() {
-        // Fill hidden form elements with offset data.
-        var $form = $('.bt-content #annotation-form');
-        var $selection = $('.annotation-text-selected');
-        var offset = $selection.data('annotation_text_offset');
-        $('#edit-annotation-text-offset', $form).attr('value', offset.offset);
-        $('#edit-annotation-text-length', $form).attr('value', offset.len);
-        $('#edit-annotation-text-string', $form).attr('value', $selection.text());
-      }
-    }).btOn();
+  $('.annotation-text-selected:first').bt(jQuery.extend({
+    trigger: 'none',
+    clickAnywhereToClose: false,
+    closeWhenOthersOpen: true,
+    ajaxPath: Drupal.settings.annotation_text.url.form,
+    postShow: function(a) {
+      // Fill hidden form elements with offset data.
+      var $form = $('.bt-content #annotation-form');
+      var $selection = $('.annotation-text-selected');
+      var offset = $selection.data('annotation_text_offset');
+      $('#edit-annotation-text-offset', $form).attr('value', offset.offset);
+      $('#edit-annotation-text-length', $form).attr('value', offset.len);
+      $('#edit-annotation-text-string', $form).attr('value', $selection.text());
+    }
+  }, Drupal.settings.annotationBtStyle)).btOn();
   
   return false;
 }
