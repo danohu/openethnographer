@@ -4,4 +4,3 @@ core = 6.x
 package = "Annotation"
 dependencies[] = jquery_update
 dependencies[] = jquery_ui
-dependencies[] = beautytips
