@@ -176,7 +176,6 @@ function annotationTextOffset(e, context) {
     offset: 0,
     length: $curr.text().length,
   }
-  console.log($(context).html());
 
   // Backtrack to parent context.
   while ($curr.length && ($curr.get(0) != context)) {
