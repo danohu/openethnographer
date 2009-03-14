@@ -13,10 +13,10 @@ Drupal.behaviors.annotation_text = function (context) {
     for (idx in Drupal.settings.annotation_text.sections) {
       $(idx + ':not(.annotation-text-processed)', context).each(function () {
         $(this).addClass('annotation-text-processed');
-        
+
         // add annotated text click handling
         annotation_text_attach_click(this);
-        
+
         // add selection handling
         annotation_text_attach_mouseup(this);
       });
@@ -38,7 +38,7 @@ function annotation_text_attach_click(e) {
       if (text_color && text_color.length) {
         color_class = color_class + ' annotation-text-' + text_color[1];
       }
-      
+
       var annotation_text = classes[idx].match(/^annotation-text-cid-(\d+)$/i);
       if (annotation_text && annotation_text.length) {
         comments.push(annotation_text[1]);
@@ -54,7 +54,7 @@ function annotation_text_attach_click(e) {
       }
       selector = selector + "#comment-" + comments[idx] + " + .comment";
     }
-    
+
     // add BT bubble containing comments
     $(this).data('annotation_text_comments', comments).bt(jQuery.extend({
       trigger: 'click',
@@ -84,7 +84,7 @@ function annotation_text_attach_mouseup(e) {
         $(this).btOff()
         annotation_text_unwrap(this, localContext);
       });
-      
+
       // don't try to go further is no selection
       return;
     }
@@ -95,42 +95,36 @@ function annotation_text_attach_mouseup(e) {
         annotation_text_unwrap(this, localContext);
       });
     }
-    
+
     // create a BT bubble with annotate link
     // we have to set it on a timer due to timing issues
     var annotate = setTimeout('$(".annotation-text-selected:last").bt("<a class=\'annotation-text-selected-link\' onClick=\'annotation_text_annotate();\'>Annotate</a>", {trigger: "none",closeWhenOthersOpen: true, width: 70}).btOn();', 5);
 
-    // if the new selection cross the spans from an old selection
-    // the new spans could be broken up into small pieces
-    // so we collapse split selections
+    // If the new selection cross the spans from an old selection the new spans
+    // could be broken up into small pieces, so we collapse split selections.
     annotation_text_collapse(localContext);
-    
-    // wrapping the selection in spans, clears the selection
-    // recreate the selection now that we are done modifying the DOM
+
+    // Wrapping the selection in spans, clears the selection. Recreate the
+    // selection now that we are done modifying the DOM.
     annotation_text_select_node(sel);
-    
-    
-    // calculate offset data for each selection span
+
+    // Calculate offset data for each selection span.
     $('.annotation-text-selected').each(function() {
-      $(this).data('annotation_text_offset', annotation_text_offset(this, localContext));
+      $(this).data('annotationTextOffset', annotationTextOffset(this, localContext));
     });
   });
 }
 
 /**
- * Recreate selection based upon passed element(s)
- * If more than one element is passed, the beginning is
- * the first element, and the end is the last
+ * Recreate selection based upon passed element(s). If more than one element is
+ * passed, the beginning is the first element, and the end is the last.
  *
  * TODO: This needs cross-browser lovin'
  */
 function annotation_text_select_node(e) {
   var selection, textRange, range, doc, win;
 
-  if (  (doc = e[0].ownerDocument) && (win = doc.defaultView) &&
-        typeof win.getSelection != 'undefined' &&
-        typeof doc.createRange != 'undefined' &&
-        (selection = window.getSelection()) && typeof selection.removeAllRanges != 'undefined') {
+  if ((doc = e[0].ownerDocument) && (win = doc.defaultView) && typeof win.getSelection != 'undefined' && typeof doc.createRange != 'undefined' && (selection = window.getSelection()) && typeof selection.removeAllRanges != 'undefined') {
     selection.removeAllRanges();
     $(e).each(function() {
       range = doc.createRange();
@@ -138,12 +132,10 @@ function annotation_text_select_node(e) {
       selection.addRange(range);
     });
   }
-  else if ( document.body &&
-            typeof document.body.createTextRange != 'undefined' &&
-            (textRange = document.body.createTextRange())) {
+  else if (document.body && typeof document.body.createTextRange != 'undefined' && (textRange = document.body.createTextRange())) {
     var start = document.body.createTextRange();
     var end = start.duplicate();
-    
+
     start.moveToElementText(e[0]);
     end.moveToElementText(e[e.length-1]);
     start.setEndPoint('EndToEnd', end);
@@ -165,36 +157,34 @@ function annotation_text_annotate() {
       // Fill hidden form elements with offset data.
       var $form = $('.bt-content #annotation-form');
       var $selection = $('.annotation-text-selected');
-      var offset = $selection.data('annotation_text_offset');
+      var offset = $selection.data('annotationTextOffset');
       $('#edit-annotation-text-offset', $form).attr('value', offset.offset);
-      $('#edit-annotation-text-length', $form).attr('value', offset.len);
+      $('#edit-annotation-text-length', $form).attr('value', offset.length);
       $('#edit-annotation-text-string', $form).attr('value', $selection.text());
     }
   }, Drupal.settings.annotationBtStyle)).btOn();
-  
+
   return false;
 }
 
 /**
- * Calculates offset data for e
- * Offsets are based upon context
+ * Calculates offset data for e. Offsets are based upon context.
  */
-function annotation_text_offset(e, context) {
-  var offset = 0;
-  var length = 0;
-  var curr;
-  
-  // length of combined text
-  length = $(e).text().length;
-  
-  // backtrack to parent context
-  curr = $(e);
-  while (curr.length && (curr[0] != context)) {
-    offset += annotation_text_get_elem_offset(curr);
-    curr = curr.parent();
+function annotationTextOffset(e, context) {
+  var $curr = $(e);
+  var offset = {
+    offset: 0,
+    length: $curr.text().length,
   }
-  
-  return {offset: offset, len: length};
+  console.log($(context).html());
+
+  // Backtrack to parent context.
+  while ($curr.length && ($curr.get(0) != context)) {
+    offset.offset += annotationTextGetElementOffset($curr);
+    $curr = $curr.parent();
+  }
+
+  return offset;
 }
 
 /**
@@ -202,9 +192,9 @@ function annotation_text_offset(e, context) {
  *
  * TODO: This needs some cross-browser lovin'
  */
-function annotation_text_get_elem_offset(e) {
+function annotationTextGetElementOffset(e) {
   var offset = 0;
-  
+
   var parent = $(e).parent();
   if (parent[0]) {
     if (parent[0].childNodes) {
@@ -244,7 +234,7 @@ function annotation_text_collapse(context) {
   $('.annotation-text-selected', context).each(function() {
     var first = this;
     var classes = $(first).attr('class').split(' ');
-    
+
     // TODO: we need a better matching algorithm... as this just assumes it only contains identifying classes
     for (i in classes) {
       if (classes[i] != 'annotation-text-selected') {
