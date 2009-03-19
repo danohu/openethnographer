@@ -6,19 +6,23 @@ Drupal.behaviors.annotationText = function (context) {
       trigger: 'none',
       clickAnywhereToClose: false,
       closeWhenOthersOpen: true,
-      postShow: function() {
-        // Fill hidden form elements with offset data.
-        var $form = $('.bt-content #annotation-form');
-        var $selection = $('.annotation-text-selected');
-        var offset = $selection.data('annotationTextOffset');
-        $('#edit-annotation-text-offset', $form).attr('value', offset.offset);
-        $('#edit-annotation-text-length', $form).attr('value', offset.length);
-        $('#edit-annotation-text-string', $form).attr('value', $selection.text());
-      }
     }, Drupal.settings.annotationBtStyle)).btOn();
 
     return false;
   });
+
+  // Annotation form.
+  $annotationForm = $('#annotation-form:not(.processed)');
+  if ($annotationForm.length) {
+    $annotationForm.addClass('processed');
+    // Fill hidden form elements with offset data.
+    var $selection = $('.annotation-text-selected');
+    var offset = $selection.data('annotationTextOffset');
+    $('#edit-annotation-text-offset', $annotationForm).attr('value', offset.offset);
+    $('#edit-annotation-text-length', $annotationForm).attr('value', offset.length);
+    $('#edit-annotation-text-string', $annotationForm).attr('value', $selection.text());
+  }
+
   if (Drupal.settings.annotation_text && Drupal.settings.annotation_text.sections) {
     // Set default annotation style, overridable with drupal_add_js().
     Drupal.settings.annotationBtStyle = jQuery.extend({
@@ -28,6 +32,11 @@ Drupal.behaviors.annotationText = function (context) {
       spikeLength: 8,
       spikeGirth: 6,
       positions: ['bottom'],
+      postShow: function() {
+        $('.bt-content').each(function() {
+          Drupal.attachBehaviors(this);
+        });
+      }
     }, Drupal.settings.annotationBtStyle);
 
     for (idx in Drupal.settings.annotation_text.sections) {
@@ -91,7 +100,7 @@ function annotation_text_attach_click(e) {
  * Attach mouseup handling to text body
  */
 function annotation_text_attach_mouseup(e) {
-  $(e).bind("mouseup", function(){
+  $(e).bind('mouseup', function(){
     localContext = this;
 
     // wrap selection in span, so it's selectable with jquery
@@ -121,11 +130,8 @@ function annotation_text_attach_mouseup(e) {
     var annotate = setTimeout(function() {
       $('.annotation-text-selected:last').bt(Drupal.settings.annotation_text.prompt, jQuery.extend({
         trigger: 'none',
-        closeWhenOthersOpen: true,
+        closeWhenOthersOpen: true
       }, Drupal.settings.annotationBtStyle, {width: 70})).btOn();
-      $('.bt-content').each(function() {
-        Drupal.attachBehaviors(this);
-      });
     }, 5);
 
     // If the new selection cross the spans from an old selection the new spans

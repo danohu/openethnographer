@@ -37,6 +37,7 @@ function annotation_form(&$form_state, $node, $type) {
   $form['comment'] = array(
     '#cols' => 30,
     '#type' => 'textarea',
+    '#resizable' => FALSE,
   );
   $form['submit'] = array(
     '#type' => 'submit',
