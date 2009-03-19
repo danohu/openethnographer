@@ -148,11 +148,10 @@ function annotation_text_select_node(e) {
  */
 function annotation_text_annotate() {
   // attach BT bubble to first selected span
-  $('.annotation-text-selected:first').bt(jQuery.extend({
+  $('.annotation-text-selected:first').bt(Drupal.settings.annotation_text.form, jQuery.extend({
     trigger: 'none',
     clickAnywhereToClose: false,
     closeWhenOthersOpen: true,
-    ajaxPath: Drupal.settings.annotation_text.url.form,
     postShow: function(a) {
       // Fill hidden form elements with offset data.
       var $form = $('.bt-content #annotation-form');

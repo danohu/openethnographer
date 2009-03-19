@@ -40,17 +40,10 @@ function annotation_text_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
         $node->content['body']['#value'] = '<div class="annotation-text-body">'. $node->content['body']['#value'] .'</div>';
 
         // add in config data
-        drupal_add_js(
-          array(
-            'annotation_text' => array(
-              'sections' => array('#node-'. $node->nid .' .annotation-text-body' => 'node'),
-              'url' => array(
-                'form' => url('node/'. $node->nid .'/annotation_form_js/annotation_text'),
-              ),
-            )
-          ),
-          'setting'
-        );  
+        drupal_add_js(array('annotation_text' => array(
+          'sections' => array('#node-'. $node->nid .' .annotation-text-body' => 'node'),
+          'form' => drupal_get_form('annotation_form', $node, 'annotation_text'),
+        )), 'setting');  
       }
       break;
 
