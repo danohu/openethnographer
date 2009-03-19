@@ -4,8 +4,7 @@
  * Add JS common to annotation modules.
  */
 function annotation_add_js() {
-  drupal_add_js(drupal_get_path('module', 'annotation') .'/bt-0.9.1/jquery.bt.js');
-  drupal_add_js(drupal_get_path('module', 'annotation') .'/bt-0.9.1/other_libs/excanvas_0002/excanvas.js');
+  beautytips_add_beautytips();
 }
 
 /**
