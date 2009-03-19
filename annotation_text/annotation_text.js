@@ -1,4 +1,21 @@
 Drupal.behaviors.annotationText = function (context) {
+  // Set default annotation style, overridable with drupal_add_js().
+  if (typeof Drupal.settings.annotationBtStyle === 'undefined') {
+    Drupal.settings.annotationBtStyle = jQuery.extend({
+      width: 250,
+      fill: '#fff',
+      strokeStyle: '#777',
+      spikeLength: 8,
+      spikeGirth: 6,
+      positions: ['bottom'],
+      postShow: function() {
+        $('.bt-content').each(function() {
+          Drupal.attachBehaviors(this);
+        });
+      }
+    }, Drupal.settings.annotationBtStyle);
+  }
+
   // Annotate link.
   $('a.annotation-text-selected-link:not(.processed)').addClass('processed').click(function() {
     // Attach BT bubble to first selected span.
@@ -13,32 +30,27 @@ Drupal.behaviors.annotationText = function (context) {
 
   // Annotation form.
   $annotationForm = $('#annotation-form:not(.processed)');
-  if ($annotationForm.length) {
+  if ($annotationForm.length > 0) {
     $annotationForm.addClass('processed');
     // Fill hidden form elements with offset data.
     var $selection = $('.annotation-text-selected');
     var offset = $selection.data('annotationTextOffset');
+    var $submit = $('#edit-submit', $annotationForm);
     $('#edit-annotation-text-offset', $annotationForm).attr('value', offset.offset);
     $('#edit-annotation-text-length', $annotationForm).attr('value', offset.length);
     $('#edit-annotation-text-string', $annotationForm).attr('value', $selection.text());
+    $('#edit-comment', $annotationForm).focus().keyup(function() {
+      if ($(this).attr('value') === '') {
+        $submit.attr('disabled', 'disabled');
+      }
+      else {
+        $submit.removeAttr('disabled');
+      }
+    });
+    $('a.cancel', $annotationForm).click(annotationTextRemove);
   }
 
   if (Drupal.settings.annotation_text && Drupal.settings.annotation_text.sections) {
-    // Set default annotation style, overridable with drupal_add_js().
-    Drupal.settings.annotationBtStyle = jQuery.extend({
-      width: 250,
-      fill: '#fff',
-      strokeStyle: '#777',
-      spikeLength: 8,
-      spikeGirth: 6,
-      positions: ['bottom'],
-      postShow: function() {
-        $('.bt-content').each(function() {
-          Drupal.attachBehaviors(this);
-        });
-      }
-    }, Drupal.settings.annotationBtStyle);
-
     for (idx in Drupal.settings.annotation_text.sections) {
       $(idx + ':not(.annotation-text-processed)', context).each(function () {
         $(this).addClass('annotation-text-processed');
@@ -103,26 +115,15 @@ function annotation_text_attach_mouseup(e) {
   $(e).bind('mouseup', function(){
     localContext = this;
 
-    // wrap selection in span, so it's selectable with jquery
-    var sel = $(this).wrapSelection().addClass('annotation-text-selected');
+    // Wrap selection in span, so it is selectable with jQuery.
+    var $sel = $(this).wrapSelection().addClass('annotation-text-selected');
 
-    // empty selection?
-    if (!sel.length) {
-      // remove previous selections
-      $('.annotation-text-selected').each(function() {
-        $(this).btOff()
-        annotation_text_unwrap(this, localContext);
-      });
+    // Remove previous selections
+    annotationTextRemove($sel);
 
-      // don't try to go further is no selection
+    // Don't try to go further is no selection.
+    if ($sel.length === 0) {
       return;
-    }
-    else {
-      // remove previous selections
-      $('.annotation-text-selected').not(sel).each(function() {
-        $(this).btOff()
-        annotation_text_unwrap(this, localContext);
-      });
     }
 
     // Create a BT with annotate link we have to set it on a timer due
@@ -140,13 +141,29 @@ function annotation_text_attach_mouseup(e) {
 
     // Wrapping the selection in spans, clears the selection. Recreate the
     // selection now that we are done modifying the DOM.
-    annotation_text_select_node(sel);
+    annotation_text_select_node($sel);
 
     // Calculate offset data for each selection span.
     $('.annotation-text-selected').each(function() {
       $(this).data('annotationTextOffset', annotationTextOffset(this, localContext));
     });
   });
+}
+
+/**
+ * Remove unused annotation tips.
+ */
+function annotationTextRemove($keep) {
+  $elements = $('.annotation-text-selected');
+  if (typeof $keep !== 'undefined') {
+    $elements = $elements.not($keep);
+  }
+  $elements.each(function() {
+    var $this = $(this);
+    $this.btOff().after($this.html()).remove();
+  });
+
+  return false;
 }
 
 /**
@@ -231,10 +248,6 @@ function annotationTextGetElementOffset(e) {
 /**
  * The opposite of $.wrap()
  */
-function annotation_text_unwrap(e, context) {
-  $(e, context).after($(e, context).html());
-  $(e, context).remove();
-}
 
 /**
  * Attempt to collapse selection spans that are right next to each other.

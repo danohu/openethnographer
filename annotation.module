@@ -37,12 +37,15 @@ function annotation_form(&$form_state, $node, $type) {
   $form['comment'] = array(
     '#cols' => 30,
     '#type' => 'textarea',
+    '#required' => TRUE,
     '#resizable' => FALSE,
   );
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save comment'),
+    '#attributes' => array('disabled' => 'disabled'),
   );
+  $form[] = array('#value' => '<a class="cancel" href="#">'. t('Cancel') .'</a>');
 
   return $form;
 }
