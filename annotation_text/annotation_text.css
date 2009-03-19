@@ -55,5 +55,6 @@
   background: #ddd;
 }
 .annotation-text-selected-link {
-  cursor: pointer;
+  display: block;
+  text-align: center;
 }

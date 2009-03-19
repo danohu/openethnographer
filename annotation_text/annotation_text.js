@@ -1,4 +1,24 @@
-Drupal.behaviors.annotation_text = function (context) {
+Drupal.behaviors.annotationText = function (context) {
+  // Annotate link.
+  $('a.annotation-text-selected-link:not(.processed)').addClass('processed').click(function() {
+    // Attach BT bubble to first selected span.
+    $('.annotation-text-selected:first').bt(Drupal.settings.annotation_text.form, jQuery.extend({
+      trigger: 'none',
+      clickAnywhereToClose: false,
+      closeWhenOthersOpen: true,
+      postShow: function() {
+        // Fill hidden form elements with offset data.
+        var $form = $('.bt-content #annotation-form');
+        var $selection = $('.annotation-text-selected');
+        var offset = $selection.data('annotationTextOffset');
+        $('#edit-annotation-text-offset', $form).attr('value', offset.offset);
+        $('#edit-annotation-text-length', $form).attr('value', offset.length);
+        $('#edit-annotation-text-string', $form).attr('value', $selection.text());
+      }
+    }, Drupal.settings.annotationBtStyle)).btOn();
+
+    return false;
+  });
   if (Drupal.settings.annotation_text && Drupal.settings.annotation_text.sections) {
     // Set default annotation style, overridable with drupal_add_js().
     Drupal.settings.annotationBtStyle = jQuery.extend({
@@ -96,9 +116,17 @@ function annotation_text_attach_mouseup(e) {
       });
     }
 
-    // create a BT bubble with annotate link
-    // we have to set it on a timer due to timing issues
-    var annotate = setTimeout('$(".annotation-text-selected:last").bt("<a class=\'annotation-text-selected-link\' onClick=\'annotation_text_annotate();\'>Annotate</a>", {trigger: "none",closeWhenOthersOpen: true, width: 70}).btOn();', 5);
+    // Create a BT with annotate link we have to set it on a timer due
+    // to timing issues.
+    var annotate = setTimeout(function() {
+      $('.annotation-text-selected:last').bt(Drupal.settings.annotation_text.prompt, jQuery.extend({
+        trigger: 'none',
+        closeWhenOthersOpen: true,
+      }, Drupal.settings.annotationBtStyle, {width: 70})).btOn();
+      $('.bt-content').each(function() {
+        Drupal.attachBehaviors(this);
+      });
+    }, 5);
 
     // If the new selection cross the spans from an old selection the new spans
     // could be broken up into small pieces, so we collapse split selections.
@@ -141,29 +169,6 @@ function annotation_text_select_node(e) {
     start.setEndPoint('EndToEnd', end);
     start.select();
   }
-}
-
-/**
- * Callback for the text annotate button
- */
-function annotation_text_annotate() {
-  // attach BT bubble to first selected span
-  $('.annotation-text-selected:first').bt(Drupal.settings.annotation_text.form, jQuery.extend({
-    trigger: 'none',
-    clickAnywhereToClose: false,
-    closeWhenOthersOpen: true,
-    postShow: function(a) {
-      // Fill hidden form elements with offset data.
-      var $form = $('.bt-content #annotation-form');
-      var $selection = $('.annotation-text-selected');
-      var offset = $selection.data('annotationTextOffset');
-      $('#edit-annotation-text-offset', $form).attr('value', offset.offset);
-      $('#edit-annotation-text-length', $form).attr('value', offset.length);
-      $('#edit-annotation-text-string', $form).attr('value', $selection.text());
-    }
-  }, Drupal.settings.annotationBtStyle)).btOn();
-
-  return false;
 }
 
 /**

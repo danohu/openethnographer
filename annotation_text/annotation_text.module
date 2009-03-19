@@ -42,6 +42,7 @@ function annotation_text_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
         // add in config data
         drupal_add_js(array('annotation_text' => array(
           'sections' => array('#node-'. $node->nid .' .annotation-text-body' => 'node'),
+          'prompt' => '<a class="annotation-text-selected-link" href="#">'. t('Annotate') .'</a>',
           'form' => drupal_get_form('annotation_form', $node, 'annotation_text'),
         )), 'setting');  
       }
