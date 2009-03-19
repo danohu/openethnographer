@@ -7,13 +7,6 @@ function annotation_add_js() {
   beautytips_add_beautytips();
 }
 
-/**
- * Add CSS common to annotation modules.
- */
-function annotation_add_css() {
-  drupal_add_css(drupal_get_path('module', 'annotation') .'/bt-0.9.1/jquery.bt.css');
-}
-
 function annotation_menu() {
   return array(
     'node/%node/annotation_form_js/%' => array(
