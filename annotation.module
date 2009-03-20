@@ -5,6 +5,7 @@
  */
 function annotation_add_js() {
   beautytips_add_beautytips();
+  drupal_add_css(drupal_get_path('module', 'annotation') .'/annotation.css');
 }
 
 function annotation_menu() {
@@ -16,6 +17,24 @@ function annotation_menu() {
       'access arguments' => array(1),
     ),
   );
+}
+
+function annotation_theme($existing, $type, $theme, $path) {
+  return array(
+    'annotation_comment' => array(
+      'arguments' => array(
+        'comment' => NULL,
+      ),
+      'path' => $path .'/templates/',
+      'template' => 'annotation_comment',
+    ),
+  );
+}
+
+function annotation_preprocess_annotation_comment($arguments, $hook) {
+  $arguments['name'] = theme('username', $arguments['comment']);
+  $arguments['time'] = format_date($arguments['comment']->timestamp, 'small');
+  $arguments['body'] = check_markup($arguments['comment']->comment);
 }
 
 function annotation_form_js_access($node) {

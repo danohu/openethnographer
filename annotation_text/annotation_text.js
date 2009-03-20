@@ -66,44 +66,27 @@ Drupal.behaviors.annotationText = function (context) {
 }
 
 /**
- * Attach click handling to annotated text
+ * Attach click handling to annotated text.
  */
 function annotation_text_attach_click(e) {
+  var annotationClass = /^annotation-text-(cid-\d+)$/;
+
   $('.annotation-text', e).each(function () {
-    // parse classes
-    var classes = $(this).attr('class').split(' ');
-    var color_class = 'annotation-text';
-    var comments = [];
-    for (idx in classes) {
-      var text_color = classes[idx].match(/^annotation-text-(\d+)$/i);
-      if (text_color && text_color.length) {
-        color_class = color_class + ' annotation-text-' + text_color[1];
-      }
+    var $this = $(this);
 
-      var annotation_text = classes[idx].match(/^annotation-text-cid-(\d+)$/i);
+    // Find the comments.
+    var content = '';
+    jQuery.each($this.attr('class').split(' '), function(n, class) {
+      var annotation_text = annotationClass.exec(class);
       if (annotation_text && annotation_text.length) {
-        comments.push(annotation_text[1]);
+        content = content + Drupal.settings.annotationComments[annotation_text[1]];
       }
-    }
+    });
 
-    // build selector for appropriate comments
-    var selector = '';
-    for (idx in comments) {
-      // create selector
-      if (selector.length) {
-        selector = selector + ', ';
-      }
-      selector = selector + "#comment-" + comments[idx] + " + .comment";
-    }
-
-    // add BT bubble containing comments
-    $(this).data('annotation_text_comments', comments).bt(jQuery.extend({
+    // Add BT bubble containing comments.
+    $this.bt(content, jQuery.extend({
       trigger: 'click',
-      contentSelector: "$('" + selector + "')",
-      closeWhenOthersOpen: true,
-      postShow: function() {
-        $(selector, $('.bt-content')).addClass(color_class);
-      }
+      closeWhenOthersOpen: true
     }, Drupal.settings.annotationBtStyle));
   });
 }

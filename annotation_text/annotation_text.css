@@ -1,15 +1,3 @@
-#annotation-form #edit-comment-wrapper {
-  padding-right: 5px;
-}
-#annotation-form #edit-comment {
-  width: 100%;
-}
-.bt-content #annotation-form,
-#annotation-form .form-item,
-#annotation-form #edit-submit {
-  margin: 0;
-}
-
 /* Largest comes first as it is the default */
 .annotation-text,
 .annotation-text-12 {
