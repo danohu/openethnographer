@@ -2,21 +2,21 @@
 
 /**
  * Add JS common to annotation modules.
+ *
+ * @param $node
+ *   The node object being annotated.
+ * @param $type
+ *   String type of annotation.
+ * @param $fields
+ *   An array of data fields used by this annotation.
  */
-function annotation_add_js() {
+function annotation_add_js($node, $type, $fields = array()) {
   beautytips_add_beautytips();
   drupal_add_css(drupal_get_path('module', 'annotation') .'/annotation.css');
-}
-
-function annotation_menu() {
-  return array(
-    'node/%node/annotation_form_js/%' => array(
-      'page callback' => 'annotation_form_js',
-      'page arguments' => array(1, 3),
-      'access callback' => 'annotation_form_js_access',
-      'access arguments' => array(1),
-    ),
-  );
+  drupal_add_js(drupal_get_path('module', 'annotation') .'/annotation.js');
+  drupal_add_js(array('annotation' => array(
+    'form' => drupal_get_form('annotation_form', $node, $type, $fields),
+  )), 'setting');  
 }
 
 function annotation_theme($existing, $type, $theme, $path) {
@@ -41,12 +41,7 @@ function annotation_form_js_access($node) {
   return (user_access('post comments') && (node_comment_mode($node->nid) == COMMENT_NODE_READ_WRITE));
 }
 
-function annotation_form_js($node, $type) {
-  print drupal_get_form('annotation_form', $node, $type);
-  exit();
-}
-
-function annotation_form(&$form_state, $node, $type) {
+function annotation_form(&$form_state, $node, $type, $fields = array()) {
   $form = array();
 
   $form['nid'] = array(
@@ -65,6 +60,11 @@ function annotation_form(&$form_state, $node, $type) {
     '#attributes' => array('disabled' => 'disabled'),
   );
   $form[] = array('#value' => '<a class="cancel" href="#">'. t('Cancel') .'</a>');
+
+  $form[$type] = array('#tree' => TRUE);
+  foreach ($fields as $field) {
+    $form[$type][$field] = array('#type' => 'hidden');
+  }
 
   return $form;
 }

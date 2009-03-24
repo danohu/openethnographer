@@ -29,11 +29,10 @@ function annotation_text_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
   switch ($op) {
     case 'view':
       if ($node->type == 'annotation_text') {
-        drupal_add_css(drupal_get_path('module', 'annotation_text') .'/annotation_text.css');
-
+        annotation_add_js($node, 'annotation_text', array('offset', 'length', 'string'));
         drupal_add_js(drupal_get_path('module', 'annotation_text') .'/jquery.wrapSelection.js');
         drupal_add_js(drupal_get_path('module', 'annotation_text') .'/annotation_text.js');
-        annotation_add_js();
+        drupal_add_css(drupal_get_path('module', 'annotation_text') .'/annotation_text.css');
 
         // Wrap node body in base annotation_text element. This is required to
         // remove dependence on theme, and remove extra white space.
@@ -43,7 +42,6 @@ function annotation_text_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
         drupal_add_js(array('annotation_text' => array(
           'sections' => array('#node-'. $node->nid .' .annotation-text-body' => 'node'),
           'prompt' => '<a class="annotation-text-selected-link" href="#">'. t('Annotate') .'</a>',
-          'form' => drupal_get_form('annotation_form', $node, 'annotation_text'),
         )), 'setting');  
       }
       break;
@@ -77,6 +75,7 @@ function _annotation_text_add_context($text, $node) {
 function annotation_text_comment(&$a1, $op) {
   switch ($op) {
     case 'insert':
+    case 'update':
       $node = node_load($a1['nid']);
       if (isset($a1['annotation_text'])) {
         $a1['annotation_text']['cid'] = $a1['cid'];
@@ -101,19 +100,6 @@ function annotation_text_comment(&$a1, $op) {
     case 'delete':
       db_query('DELETE FROM {annotation_text} WHERE cid = %d', $a1->cid);
       break;
-  }
-}
-
-/**
- * Implementation of hook_FORM_ID_form_alter
- * Add annotation information into comment form, so it's not lost
- */
-function annotation_text_form_annotation_form_alter(&$form, &$form_state) {
-  if ($form['#parameters'][3] == 'annotation_text') {
-    $form['annotation_text'] = array('#tree' => TRUE);
-    $form['annotation_text']['offset'] = array('#type' => 'hidden');
-    $form['annotation_text']['length'] = array('#type' => 'hidden');
-    $form['annotation_text']['string'] = array('#type' => 'hidden');
   }
 }
 
@@ -171,7 +157,7 @@ function annotation_text_filter_process($text, $format) {
     $clean = _annotation_text_get_clean_text($text, $adjustments);
     
     // get annotations
-    $result = db_query("SELECT * FROM {annotation_text} WHERE vid=%d ORDER BY offset ASC, length ASC", $node->vid);
+    $result = db_query("SELECT * FROM {annotation_text} WHERE vid = %d ORDER BY offset ASC, length ASC", $node->vid);
     while ($annotation = db_fetch_object($result)) {
       // match it up
       if (($annotation->matched_offset = _annotation_text_closest_match($clean, $annotation->string, $annotation->offset, $annotation->length)) !== FALSE) {
