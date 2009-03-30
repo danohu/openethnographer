@@ -51,10 +51,7 @@ function annotationTextAttachClick(e) {
     });
 
     // Add BT bubble containing comments.
-    $this.bt(content, jQuery.extend({
-      trigger: 'click',
-      closeWhenOthersOpen: true
-    }, Drupal.settings.annotationBtStyle));
+    $this.bt(content, Drupal.settings.annotationBtStyle);
   });
 }
 
