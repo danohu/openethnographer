@@ -232,7 +232,7 @@ function annotation_text_filter_process($text, $format) {
             $corrected_annotation['length'] = $annotation->length;
           }
           // else, if higher offset, but less than curent length
-          elseif (($annotation->corrected_offset > $offset) && ($annotation->corrected_offset <  ($offset + $corrected_annotation['length']))) {
+          elseif (($annotation->corrected_offset > $offset) && ($annotation->corrected_offset < ($offset + $corrected_annotation['length']))) {
             $corrected_annotation['length'] = $annotation->corrected_offset - $offset;
           }
           // else, if lower offset, but end is in range
@@ -261,24 +261,25 @@ function annotation_text_filter_process($text, $format) {
         $corrected_annotations[] = $corrected_annotation;
       }
       
-      // now that annotations are cleaned up, add annotation markup
+      // Now that annotations are cleaned up, add annotation markup.
       $currAdjustment = 0;
       foreach ($corrected_annotations as $corrected_annotation) {
         // generate classes and anchor for this region
-        $classes = array('annotation-text');
+        $classes = array('annotation');
         foreach ($corrected_annotation['cids'] as $cid) {
-          $classes[] = 'annotation-text-cid-'. $cid;
+          $classes[] = 'annotation-cid-'. $cid;
         }
         
-        // add class that specifies number of overlapping annotations
+        // Add class that specifies number of overlapping annotations.
         $classes[] = 'annotation-text-'. count($corrected_annotation['cids']);
         
-        // generate new string, and replace old string
+        // Generate new string, and replace old string.
         $string = substr($text, $corrected_annotation['offset'] + $currAdjustment, $corrected_annotation['length']);
         $newString = '<span class="'. implode(' ', $classes) .'">'. $string .'</span>';
         $text = substr_replace($text, $newString, $corrected_annotation['offset'] + $currAdjustment, $corrected_annotation['length']);
         
-        // adjust on-the-fly adjustment so we continue to insert tags at the right place
+        // Adjust on-the-fly adjustment so we continue to insert tags at
+        // the right place.
         $currAdjustment += strlen($newString) - strlen($string);
       }
     }

@@ -36,19 +36,18 @@ Drupal.behaviors.annotationText = function(context) {
  * Attach click handling to annotated text.
  */
 function annotationTextAttachClick(e) {
-  var annotationClass = /^annotation-text-(cid-\d+)$/;
+  var annotationRegExp = /\bannotation-(cid-\d+)\b/g;
+  var annotation;
 
-  $('.annotation-text', e).each(function () {
+  $('.annotation', e).each(function () {
     var $this = $(this);
+    var class = $this.attr('class');
+    var content = '';
 
     // Find the comments.
-    var content = '';
-    jQuery.each($this.attr('class').split(' '), function(n, class) {
-      var annotation_text = annotationClass.exec(class);
-      if (annotation_text && annotation_text.length) {
-        content = content + Drupal.settings.annotationComments[annotation_text[1]];
-      }
-    });
+    while ((annotation = annotationRegExp.exec(class)) !== null) {
+      content = content + Drupal.settings.annotationComments[annotation[1]];
+    }
 
     // Add BT bubble containing comments.
     $this.bt(content, Drupal.settings.annotationBtStyle);
