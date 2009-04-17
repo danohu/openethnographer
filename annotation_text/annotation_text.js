@@ -22,36 +22,11 @@ Drupal.behaviors.annotationText = function(context) {
       $(idx + ':not(.annotation-text-processed)', context).each(function () {
         $(this).addClass('annotation-text-processed');
 
-        // add annotated text click handling
-        annotationTextAttachClick(this);
-
         // add selection handling
         annotationTextAttachMouseup(this);
       });
     }
   }
-}
-
-/**
- * Attach click handling to annotated text.
- */
-function annotationTextAttachClick(e) {
-  var annotationRegExp = /\bannotation-(cid-\d+)\b/g;
-  var annotation;
-
-  $('.annotation', e).each(function () {
-    var $this = $(this);
-    var class = $this.attr('class');
-    var content = '';
-
-    // Find the comments.
-    while ((annotation = annotationRegExp.exec(class)) !== null) {
-      content = content + Drupal.settings.annotationComments[annotation[1]];
-    }
-
-    // Add BT bubble containing comments.
-    $this.bt(content, Drupal.settings.annotationBtStyle);
-  });
 }
 
 /**

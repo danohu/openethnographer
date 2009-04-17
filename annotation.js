@@ -38,6 +38,24 @@ Drupal.settings.annotationBtStyle = jQuery.extend({
   }
 }, Drupal.settings.annotationBtStyle);
 
+Drupal.behaviors.annotation = function(context) {
+  var annotationRegExp = /\bannotation-(cid-\d+)\b/g;
+  var annotation;
+
+  $('.annotation:not(.annontation-processed)', context).addClass('annotation-processed').each(function () {
+    var $this = $(this);
+    var content = '';
+
+    // Find the comments.
+    while ((annotation = annotationRegExp.exec($this.attr('class'))) !== null) {
+      content = content + Drupal.settings.annotationComments[annotation[1]];
+    }
+
+    // Add BT bubble containing comments.
+    $this.bt(content, Drupal.settings.annotationBtStyle);
+  });
+}
+
 jQuery.fn.annotate = function(options) {
   var opts = jQuery.extend(jQuery.annotation.defaults, options);
   jQuery.annotation.active = true;
