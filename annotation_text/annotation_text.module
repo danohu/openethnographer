@@ -70,7 +70,7 @@ function _annotation_text_add_context($text, $node) {
 }
 
 /**
- * Implementation of hook_comment
+ * Implementation of hook_comment.
  */
 function annotation_text_comment(&$a1, $op) {
   switch ($op) {
@@ -83,18 +83,8 @@ function annotation_text_comment(&$a1, $op) {
         drupal_write_record('annotation_text', $a1['annotation_text']);
       }
 
-      // clear filter cache for this node
       cache_clear_all($node->format .':'. md5($node->body), 'cache_filter');
       cache_clear_all($node->format .':'. md5($node->teaser), 'cache_filter');
-      break;
-
-    case 'view':
-      $node = node_load($a1->nid);
-      if ($node->type === 'annotation_text') {
-        drupal_add_js(array('annotationComments' => array(
-          'cid-'. $a1->cid => theme('annotation_comment', $a1),
-        )), 'setting');
-      }
       break;
 
     case 'delete':
