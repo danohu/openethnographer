@@ -38,6 +38,14 @@ Drupal.settings.annotationBtStyle = jQuery.extend({
   }
 }, Drupal.settings.annotationBtStyle);
 
+$(document).ready(function() {
+  // If the URL contains a fragment starting with image-annotate we define the cid of the note to highlight/show
+  var url = document.location.toString();
+  if (url = url.match(/#annotation-cid-(\d+)$/)) {
+    Drupal.showAnnotation(url[1]);
+  }
+});
+
 Drupal.behaviors.annotation = function(context) {
   var annotationRegExp = /\bannotation-(cid-\d+)\b/g;
   var annotation;
@@ -53,6 +61,20 @@ Drupal.behaviors.annotation = function(context) {
 
     // Add BT bubble containing comments.
     $this.bt(content, Drupal.settings.annotationBtStyle);
+
+    this.showAnnotation = function() {
+      $this.parents('.annotated').trigger('focus');
+      this.btOn();
+      $('html, body').animate({
+        scrollTop: Math.min($this.offset().top, $('html, body').scrollTop())
+      }, 'fast'); // Hack with html & body scrolling so that it works in Safari
+    };
+  });
+
+  // Replace the target of the comment links.
+  $('a.annotation-link:not(.annotation-processed)', context).addClass('annotation-processed').click(function() {
+    Drupal.showAnnotation($(this).attr('href').split(/#annotation-cid-(\d+)$/)[1]);
+    return false;
   });
 }
 
@@ -97,6 +119,18 @@ jQuery.fn.submitAnnotate = function() {
     }
   });
 };
+
+jQuery.fn.showAnnotation = function() {
+  return this.each(function() {
+    if ($.isFunction(this.showAnnotation)) {
+      this.showAnnotation();
+    }
+  });
+};
+
+Drupal.showAnnotation = function(cid) {
+  $('.annotation-cid-' + cid).showAnnotation();
+}
 
 jQuery.annotation = {
   active: false, // Is there is an active annotation?
