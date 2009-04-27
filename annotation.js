@@ -63,7 +63,7 @@ Drupal.behaviors.annotation = function(context) {
     $this.bt(content, Drupal.settings.annotationBtStyle);
 
     this.showAnnotation = function() {
-      $this.parents('.annotated').trigger('focus');
+      $this.parents('.annotated').trigger('mouseenter');
       this.btOn();
       $('html, body').animate({
         scrollTop: Math.min($this.offset().top, $('html, body').scrollTop())
@@ -87,7 +87,11 @@ jQuery.fn.annotate = function(options) {
     trigger: 'none',
     clickAnywhereToClose: false,
     closeWhenOthersOpen: false,
-  }, Drupal.settings.annotationBtStyle)).btOn();
+  }, Drupal.settings.annotationBtStyle)).btOn()
+  .bind('dragstart', Drupal.saveAnnotationState)
+  .bind('resizestart', Drupal.saveAnnotationState)
+  .bind('dragstop', Drupal.restoreAnnotationState)
+  .bind('resizestop', Drupal.restoreAnnotationState);
 
   this.get(0).removeAnnotate = function() {
     opts.preHide.apply(this);
@@ -131,6 +135,21 @@ jQuery.fn.showAnnotation = function() {
 Drupal.showAnnotation = function(cid) {
   $('.annotation-cid-' + cid).showAnnotation();
 }
+
+Drupal.saveAnnotationState = function() {
+  $this = $(this);
+  $this.data('annotation-data', {
+    '#edit-comment': $('#edit-comment', $this.data('bt-box')).attr('value')
+  });
+  this.btOff();
+};
+
+Drupal.restoreAnnotationState = function() {
+  $this = $(this);
+  this.btOn();
+  $('#edit-comment', $this.data('bt-box')).attr('value', $this.data('annotation-data')['#edit-comment']).keyup();
+  $this.removeData('annotation-data');
+};
 
 jQuery.annotation = {
   active: false, // Is there is an active annotation?
