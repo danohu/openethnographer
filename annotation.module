@@ -12,6 +12,7 @@
  */
 function annotation_add_js($node, $type, $fields = array()) {
   annotation_is_active(TRUE);
+  drupal_add_js(drupal_get_path('module', 'beautytips') .'/other_libs/jquery.hoverIntent.minified.js');
   beautytips_add_beautytips();
   drupal_add_css(drupal_get_path('module', 'annotation') .'/annotation.css');
   drupal_add_js(drupal_get_path('module', 'annotation') .'/annotation.js');
@@ -47,6 +48,15 @@ function annotation_preprocess_annotation_comment($arguments, $hook) {
   $arguments['name'] = theme('username', $arguments['comment']);
   $arguments['time'] = format_date($arguments['comment']->timestamp, 'small');
   $arguments['body'] = check_markup($arguments['comment']->comment);
+  $links = array(
+    'annotation_full_thread' => array(
+      'title' => t('View full thread'),
+      'href' => $_REQUEST['q'],
+      'fragment' => 'comment-'. $arguments['comment']->cid,
+    ),
+  );
+  drupal_alter('link', $links, $arguments['comment']);
+  $arguments['links'] = theme('links', $links);
 }
 
 function annotation_form_js_access($node) {

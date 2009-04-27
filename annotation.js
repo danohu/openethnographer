@@ -12,7 +12,8 @@ Drupal.settings.annotationBtStyle = jQuery.extend({
     });
 
     var source = $(this);
-    source.annotationForm = $('form', source.data('bt-box'));
+    source.annotationBox = $(source.data('bt-box'));
+    source.annotationForm = $('form', source.annotationBox);
 
     // Disable submit button when there is empty content.
     var $submit = $('#edit-submit', source.annotationForm);
@@ -34,6 +35,16 @@ Drupal.settings.annotationBtStyle = jQuery.extend({
     $('a.cancel', source.annotationForm).click(function() {
       source.removeAnnotate();
       return false;
+    });
+
+    // Highlight clicked comment.
+    $('a[href*=#comment-]', source.annotationBox).click(function() {
+      $('.annotation-active').removeClass('annotation-active');
+      var $comment = $('' + $(this).attr('href').match(/#comment-\d*/));
+      if ($comment.is('a')) {
+        $comment = $comment.next();
+      }
+      $comment.addClass('annotation-active');
     });
   }
 }, Drupal.settings.annotationBtStyle);
@@ -59,15 +70,45 @@ Drupal.behaviors.annotation = function(context) {
       content = content + Drupal.settings.annotationComments[annotation[1]];
     }
 
+    // Count over & out for both annotation and beautytip for linked hovering.
+    this.annotationOver = function(event) {
+      var box = $this.data('bt-box');
+      if (box === undefined) {
+        this.btOn();
+        box = $this.data('bt-box');
+        box.annotationOverCount = 0;
+        box.btOff = function () { $this.btOff(); };
+        box.hoverIntent({
+          timeout: 500,
+          over: this.annotationOver,
+          out: this.annotationOut
+        });
+      }
+      box.annotationOverCount += 1;
+    }
+    this.annotationOut = function(event) {
+      var box = $this.data('bt-box');
+      if (box !== undefined) {
+        box.annotationOverCount -= 1;
+        if (box.annotationOverCount === 0) {
+          box.btOff();
+        }
+      }
+    }
+
     // Add BT bubble containing comments.
-    $this.bt(content, Drupal.settings.annotationBtStyle);
+    $this.bt(content, jQuery.extend({
+    }, Drupal.settings.annotationBtStyle)).hoverIntent({
+      timeout: 500,
+      over: this.annotationOver,
+      out: this.annotationOut
+    });
 
     this.showAnnotation = function() {
       $this.parents('.annotated').trigger('mouseenter');
       this.btOn();
-      $('html, body').animate({
-        scrollTop: Math.min($this.offset().top, $('html, body').scrollTop())
-      }, 'fast'); // Hack with html & body scrolling so that it works in Safari
+      // Hack with html & body scrolling so that it works in Safari
+      $('html, body').scrollTop(Math.min($this.offset().top, $('html, body').scrollTop()));
     };
   });
 
