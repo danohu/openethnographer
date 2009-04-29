@@ -81,10 +81,10 @@ function annotation_text_comment(&$a1, $op) {
         $a1['annotation_text']['cid'] = $a1['cid'];
         $a1['annotation_text']['vid'] = $node->vid;
         drupal_write_record('annotation_text', $a1['annotation_text']);
-      }
 
-      cache_clear_all($node->format .':'. md5($node->body), 'cache_filter');
-      cache_clear_all($node->format .':'. md5($node->teaser), 'cache_filter');
+        cache_clear_all($node->format .':'. md5($node->body), 'cache_filter');
+        cache_clear_all($node->format .':'. md5($node->teaser), 'cache_filter');
+      }
       break;
 
     case 'delete':
