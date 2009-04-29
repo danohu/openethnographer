@@ -130,6 +130,23 @@ function annotation_text_filter($op, $delta = 0, $format = -1, $text = '', $cach
 }
 
 /**
+ * Load annotations for a node version.
+ */
+function annotation_text_annotations($vid) {
+  static $annotations = array();
+
+  if (!isset($annotations[$vid])) {
+    $annotations[$vid] = array();
+    $result = db_query("SELECT * FROM {annotation_text} WHERE vid = %d ORDER BY offset ASC, length ASC", $vid);
+    while ($annotation = db_fetch_object($result)) {
+      $annotations[$vid]['c'. $annotation->cid] = $annotation;
+    }
+  }
+
+  return $annotations[$vid];
+}
+
+/**
  * Filter process function that does the heavy lifting
  */
 function annotation_text_filter_process($text, $format) {
@@ -146,9 +163,7 @@ function annotation_text_filter_process($text, $format) {
     // strip all html tags
     $clean = _annotation_text_get_clean_text($text, $adjustments);
     
-    // get annotations
-    $result = db_query("SELECT * FROM {annotation_text} WHERE vid = %d ORDER BY offset ASC, length ASC", $node->vid);
-    while ($annotation = db_fetch_object($result)) {
+    foreach (annotation_text_annotations($node->vid) as $annotation) {
       // match it up
       if (($annotation->matched_offset = _annotation_text_closest_match($clean, $annotation->string, $annotation->offset, $annotation->length)) !== FALSE) {
         // correct matched_offset due to html tags

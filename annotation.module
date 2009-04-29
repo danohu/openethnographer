@@ -105,3 +105,22 @@ function annotation_comment($comment, $op) {
     )), 'setting');
   }
 }
+
+function annotation_link($type, $object, $teaser = FALSE) {
+  if ($type === 'comment' && annotation_is_active()) {
+    $node = node_load($object->nid);
+    $annotations = module_invoke_all('annotations', $node->vid);
+    if (isset($annotations['c'. $object->cid])) {
+      return array(
+        'annotation_link' => array(
+          'title' => t('View annotation'),
+          'href' => $_GET['q'],
+          'fragment' => 'annotation-cid-'. $object->cid,
+          'attributes' => array(
+            'class' => 'annotation-link',
+          ),
+        ),
+      );
+    }
+  }
+}
