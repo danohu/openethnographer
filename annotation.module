@@ -19,6 +19,18 @@ function annotation_add_js($node, $type, $fields = array()) {
   drupal_add_js(array('annotation' => array(
     'form' => drupal_get_form('annotation_form', $node, $type, $fields),
   )), 'setting');  
+
+  $annotations = module_invoke_all('annotations', $node->vid);
+  foreach ($annotations as $annotation) {
+    $comment = _comment_load($annotation->cid);
+    $comment->annotation = $annotation;
+    drupal_add_js(array('annotationComments' => array(
+      'cid-'. $comment->cid => theme('annotation_comment', $comment),
+    )), 'setting');
+    drupal_add_js(array('annotationCommentsSource' => array(
+      'cid-'. $comment->cid => $comment,
+    )), 'setting');
+  }
 }
 
 /**
@@ -47,7 +59,7 @@ function annotation_theme($existing, $type, $theme, $path) {
 function annotation_preprocess_annotation_comment($arguments, $hook) {
   $arguments['name'] = theme('username', $arguments['comment']);
   $arguments['time'] = format_date($arguments['comment']->timestamp, 'small');
-  $arguments['body'] = check_markup($arguments['comment']->comment);
+  $arguments['body'] = check_markup($arguments['comment']->comment, $arguments['comment']->format);
   $links = array(
     'annotation_full_thread' => array(
       'title' => t('View full thread'),
@@ -55,6 +67,13 @@ function annotation_preprocess_annotation_comment($arguments, $hook) {
       'fragment' => 'comment-'. $arguments['comment']->cid,
     ),
   );
+  if (user_access('post comments') && comment_access('edit', $arguments['comment'])) {
+    $links['annotation_edit'] = array(
+      'title' => t('Edit'),
+      'href' => $_REQUEST['q'],
+      'fragment' => 'annotation-edit-'. $arguments['comment']->cid,
+    );
+  }
   drupal_alter('link', $links, $arguments['comment']);
   $arguments['links'] = theme('links', $links);
 }
@@ -64,8 +83,13 @@ function annotation_form_js_access($node) {
 }
 
 function annotation_form(&$form_state, $node, $type, $fields = array()) {
+  global $user;
   $form = array();
 
+  $form['uid'] = array(
+    '#type' => 'value',
+    '#value' => $user->uid,
+  );
   $form['nid'] = array(
     '#type' => 'value',
     '#value' => $node->nid,
@@ -75,6 +99,14 @@ function annotation_form(&$form_state, $node, $type, $fields = array()) {
     '#type' => 'textarea',
     '#required' => TRUE,
     '#resizable' => FALSE,
+  );
+  $form['uid'] = array(
+    '#type' => 'value',
+    '#value' => $user->uid,
+  );
+  $form['cid'] = array(
+    '#type' => 'hidden',
+    '#default_value' => 0,
   );
   $form['submit'] = array(
     '#type' => 'submit',
@@ -93,17 +125,6 @@ function annotation_form(&$form_state, $node, $type, $fields = array()) {
 
 function annotation_form_submit($form, &$form_state) {
   comment_form_submit($form, $form_state);
-}
-
-/**
- * Make comments rendered for annotation available.
- */
-function annotation_comment($comment, $op) {
-  if ($op === 'view' && annotation_is_active()) {
-    drupal_add_js(array('annotationComments' => array(
-      'cid-'. $comment->cid => theme('annotation_comment', $comment),
-    )), 'setting');
-  }
 }
 
 function annotation_link($type, $object, $teaser = FALSE) {

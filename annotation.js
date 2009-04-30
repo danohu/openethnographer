@@ -15,21 +15,30 @@ Drupal.settings.annotationBtStyle = jQuery.extend({
     source.annotationBox = $(source.data('bt-box'));
     source.annotationForm = $('form', source.annotationBox);
 
-    // Disable submit button when there is empty content.
-    var $submit = $('#edit-submit', source.annotationForm);
-    $('#edit-comment', source.annotationForm).focus().keyup(function() {
-      if ($(this).attr('value') === '') {
+    if (source.annotationForm.length) {
+      // Disable submit button when there is empty content.
+      var $submit = $('#edit-submit', source.annotationForm);
+      var $edit = $('#edit-comment', source.annotationForm).focus().keyup(function() {
+        if ($(this).attr('value') === '') {
         $submit.attr('disabled', 'disabled');
-      }
-      else {
-        $submit.removeAttr('disabled');
-      }
-    });
+        }
+        else {
+          $submit.removeAttr('disabled');
+        }
+      });
 
-    // Call back the submit event.
-    source.annotationForm.submit(function() {
-      source.submitAnnotate();
-    });
+      // Fill in comment being edited.
+      var comment = source.data('annotationEditComment');
+      if (comment !== undefined) {
+        $edit.attr('value', comment.comment).keyup();
+        $('#edit-cid', source.annotationForm).attr('value', comment.cid);
+      }
+
+      // Call back the submit event.
+      source.annotationForm.submit(function() {
+        source.submitAnnotate();
+      });
+    }
 
     // Remove annotation on cancel.
     $('a.cancel', source.annotationForm).click(function() {
@@ -45,6 +54,15 @@ Drupal.settings.annotationBtStyle = jQuery.extend({
         $comment = $comment.next();
       }
       $comment.addClass('annotation-active');
+    });
+
+    // Edit annotation link.
+    $('a[href*=#annotation-edit]', source.annotationBox).click(function() {
+      var comment = Drupal.settings.annotationCommentsSource[source.attr('class').match(/\bannotation-(cid-\d+)\b/)[1]];
+      source.annotate({
+        comment: comment
+      });
+      return false;
     });
   }
 }, Drupal.settings.annotationBtStyle);
@@ -77,7 +95,9 @@ Drupal.behaviors.annotation = function(context) {
         this.btOn();
         box = $this.data('bt-box');
         box.annotationOverCount = 0;
-        box.annotationOff = function () { $this.btOff(); };
+        box.annotationOff = function() {
+          $this.btOff();
+        };
         box.hoverIntent({
           timeout: 500,
           over: this.annotationOver,
@@ -123,6 +143,12 @@ Drupal.behaviors.annotation = function(context) {
 jQuery.fn.annotate = function(options) {
   var opts = jQuery.extend(jQuery.annotation.defaults, options);
   jQuery.annotation.active = true;
+
+  if (opts.comment !== undefined) {
+    this.data('annotationEditComment', opts.comment);
+  }
+
+  opts.preShow.apply(this);
 
   // Draw the beauty tip.
   this.bt(Drupal.settings.annotation.form, jQuery.extend({
@@ -197,6 +223,7 @@ jQuery.annotation = {
   active: false, // Is there is an active annotation?
   defaults: {
     submit:   function(){return;}, // Run on submit.
+    preShow:  function(){return;}, // run before popup is constructed.
     preHide:  function(){return;}, // Run before popup is cancelled.
     postHide: function(){return;}  // Run after popup is cancelled.
   }

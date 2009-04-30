@@ -80,7 +80,10 @@ function annotation_text_comment(&$a1, $op) {
       if (isset($a1['annotation_text'])) {
         $a1['annotation_text']['cid'] = $a1['cid'];
         $a1['annotation_text']['vid'] = $node->vid;
-        drupal_write_record('annotation_text', $a1['annotation_text']);
+        $annotations = annotation_text_annotations($node->vid);
+        if (!isset($annotations['c'. $a1['cid']])) {
+          drupal_write_record('annotation_text', $a1['annotation_text']);
+        }
 
         cache_clear_all($node->format .':'. md5($node->body), 'cache_filter');
         cache_clear_all($node->format .':'. md5($node->teaser), 'cache_filter');
@@ -163,7 +166,8 @@ function annotation_text_filter_process($text, $format) {
     // strip all html tags
     $clean = _annotation_text_get_clean_text($text, $adjustments);
     
-    foreach (annotation_text_annotations($node->vid) as $annotation) {
+    $result = db_query("SELECT * FROM {annotation_text} WHERE vid = %d ORDER BY offset ASC, length ASC", $node->vid);
+    while ($annotation = db_fetch_object($result)) {
       // match it up
       if (($annotation->matched_offset = _annotation_text_closest_match($clean, $annotation->string, $annotation->offset, $annotation->length)) !== FALSE) {
         // correct matched_offset due to html tags

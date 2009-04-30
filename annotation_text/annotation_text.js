@@ -2,17 +2,7 @@ Drupal.behaviors.annotationText = function(context) {
   // Annotate link.
   $('a.annotation-text-selected-link:not(.processed)').addClass('processed').click(function() {
     // Attach BT bubble to first selected span.
-    $('.annotation-text-selected:first').annotate({
-      submit: function() {
-        // Fill hidden form elements with offset data.
-        $this = $(this);
-        var offset = $this.data('annotationTextOffset');
-        $('#edit-annotation-text-offset', this.annotationForm).attr('value', offset.offset);
-        $('#edit-annotation-text-length', this.annotationForm).attr('value', offset.length);
-        $('#edit-annotation-text-string', this.annotationForm).attr('value', $this.text());
-      },
-      postHide: annotationTextRemove
-    });
+    $('.annotation-text-selected:first').annotate(Drupal.textAnnotationOptions);
 
     return false;
   });
@@ -28,6 +18,18 @@ Drupal.behaviors.annotationText = function(context) {
     }
   }
 }
+
+Drupal.textAnnotationOptions = {
+  submit: function() {
+    // Fill hidden form elements with offset data.
+    $this = $(this);
+    var offset = $this.data('annotationTextOffset');
+    $('#edit-annotation-text-offset', this.annotationForm).attr('value', offset.offset);
+    $('#edit-annotation-text-length', this.annotationForm).attr('value', offset.length);
+    $('#edit-annotation-text-string', this.annotationForm).attr('value', $this.text());
+  },
+  postHide: annotationTextRemove
+};
 
 /**
  * Attach mouseup handling to text body
