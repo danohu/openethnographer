@@ -77,7 +77,7 @@ Drupal.behaviors.annotation = function(context) {
         this.btOn();
         box = $this.data('bt-box');
         box.annotationOverCount = 0;
-        box.btOff = function () { $this.btOff(); };
+        box.annotationOff = function () { $this.btOff(); };
         box.hoverIntent({
           timeout: 500,
           over: this.annotationOver,
@@ -91,7 +91,7 @@ Drupal.behaviors.annotation = function(context) {
       if (box !== undefined) {
         box.annotationOverCount -= 1;
         if (box.annotationOverCount === 0) {
-          box.btOff();
+          box.annotationOff();
         }
       }
     }
@@ -106,7 +106,8 @@ Drupal.behaviors.annotation = function(context) {
 
     this.showAnnotation = function() {
       $this.parents('.annotated').trigger('mouseenter');
-      this.btOn();
+      this.annotationOver();
+      $this.data('bt-box').annotationOverCount = 0;
       // Hack with html & body scrolling so that it works in Safari
       $('html, body').scrollTop(Math.min($this.offset().top, $('html, body').scrollTop()));
     };
