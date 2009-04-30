@@ -1,0 +1,139 @@
+<?php
+// $Id$
+/**
+ * Implementation of hook_comment
+ */
+function annotation_image_comment(&$comment, $op) {
+  switch ($op) {
+    case 'insert':
+    case 'update':
+      if (isset($comment['annotation_image'])) {
+        $node = node_load($comment['nid']);
+        $annotation = array(
+          'vid' => $node->vid,
+          'cid' => $comment['cid'],
+          'field_name' => $comment['annotation_image']['field'],
+          'position_top' => max(0, $comment['annotation_image']['top']),
+          'position_left' => max(0, $comment['annotation_image']['left']),
+          // TODO: check position.size is inside the picture
+          'size_width' => $comment['annotation_image']['width'],
+          'size_height' => $comment['annotation_image']['height'],
+        );
+        $annotations = annotation_image_annotations($node->vid);
+        if (isset($annotations['c'. $comment['cid']])) {
+          drupal_write_record('annotation_image', $annotation, array('vid', 'cid', 'field_name'));
+        }
+        else {
+          drupal_write_record('annotation_image', $annotation);
+        }
+      }
+      break;
+
+    case 'delete':
+      db_query('DELETE FROM {annotation_image} WHERE cid = %d', $comment->cid);
+      break;
+  }
+}
+
+/**
+ * Implementation of CCK's hook_field_formatter_info().
+ */
+function annotation_image_field_formatter_info() {
+  $formatters = array(
+    'annotation_image' => array(
+      'label' => t('Image with annotations'),
+      'field types' => array('image', 'filefield'),
+      'suitability callback' => 'annotation_image_handles_file',
+      'css' => array(drupal_get_path('module','annotation_image') .'/tag.css'),
+      'description' => t('Display a picture and its annotations.'),
+    ),
+  );
+
+  return $formatters;
+}
+
+/**
+ * Load annotations for a node version.
+ */
+function annotation_image_annotations($vid) {
+  static $annotations = array();
+
+  if (!isset($annotations[$vid])) {
+    $annotations[$vid] = array();
+    $result = db_query("SELECT i.* FROM {annotation_image} i WHERE i.vid = %d ORDER BY (i.size_height*i.size_width) ASC", $vid);
+    while ($annotation = db_fetch_object($result)) {
+      $annotations[$vid]['c'. $annotation->cid] = $annotation;
+    }
+  }
+
+  return $annotations[$vid];
+}
+
+/**
+ * Implementation of hook_nodeapi().
+ */
+function annotation_image_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+  switch ($op) {
+    case 'delete':
+      db_query("DELETE FROM {annotation_image} WHERE nid = %d", $node->nid);
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_theme
+ */
+function annotation_image_theme() {
+  return array(
+    'annotation_image_formatter_annotation_image' => array(
+      'arguments' => array('element' => NULL),
+    ),
+  );
+}
+
+/**
+ * Theme function for the image annotate formatter
+ */
+function theme_annotation_image_formatter_annotation_image($element) {
+  if (empty($element['#item'])) {
+    return '';
+  }
+  $item = $element['#item'];
+  $field = content_fields($element['#field_name']);
+  if (empty($item['fid']) && $field['use_default_image']) {
+    $item = $field['default_image'];
+  }
+  if (empty($item['filepath'])) {
+    $item = array_merge($item, field_file_load($item['fid']));
+  }
+
+  // Sort by area (height*width) to make sure small annotations are always on
+  // the top and avoid having some unhoverable ones.
+  $areas = '';
+  // Build the array of notes settings
+  foreach (annotation_image_annotations($element['#node']->vid) as $note) {
+    $areas .= '<div class="annotation annotation-cid-'. $note->cid .' image-annotate-area" style="top: '. $note->position_top .'px; left: '. $note->position_left .'px; width: '. $note->size_width .'px; height: '. $note->size_height .'px;"><div style="width: '. ($note->size_width - 2) .'px; height: '. ($note->size_height - 2) .'px;"></div></div>';
+  }
+
+  // Load all the JS and CSS magic
+  jquery_ui_add(array('ui.resizable', 'ui.draggable'));
+  annotation_add_js($element['#node'], 'annotation_image', array('field', 'top', 'left', 'width', 'height'));
+  drupal_add_js(drupal_get_path('module', 'annotation_image') .'/annotation_image.js');
+  drupal_add_css(drupal_get_path('module', 'annotation_image') .'/annotation_image.css');
+
+  $output = '';
+  if (user_access('post comments') || user_access('post comments without approval')) {
+    $output .= '<a class="image-annotate-add" id="image-annotate-add-'. $field['field_name'] .'">'. t('Add a annotation') .'</a>';
+  }
+  $size = getimagesize($item['filepath']);
+  $style = 'width: '. $size[0] .'px; height: '. $size[1] .'px;';
+  $output .= theme('imagefield_image', $item, $item['alt'], $item['title'], array(
+    'class' => 'imagefield imagefield-'. $field['field_name'] .' image-annotate-'. $field['field_name'],
+  ));
+  $output .= '<div class="image-annotate-canvas annotated" style="background: url('. url($item['filepath']) .'); '. $style .'">';
+  $output .= '<div class="image-annotate-view" style="'. $style .'">'. $areas .'</div>';
+  $output .= '<div class="image-annotate-edit" style="'. $style .'"><div class="image-annotate-edit-area"></div></div>';
+  $output .= '</div>';
+
+  return $output;
+}
