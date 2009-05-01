@@ -20,7 +20,7 @@ Drupal.settings.annotationBtStyle = jQuery.extend({
       var $submit = $('#edit-submit', source.annotationForm);
       var $edit = $('#edit-comment', source.annotationForm).focus().keyup(function() {
         if ($(this).attr('value') === '') {
-        $submit.attr('disabled', 'disabled');
+          $submit.attr('disabled', 'disabled');
         }
         else {
           $submit.removeAttr('disabled');
@@ -59,9 +59,9 @@ Drupal.settings.annotationBtStyle = jQuery.extend({
     // Edit annotation link.
     $('a[href*=#annotation-edit]', source.annotationBox).click(function() {
       var comment = Drupal.settings.annotationCommentsSource[source.attr('class').match(/\bannotation-(cid-\d+)\b/)[1]];
-      source.annotate({
+      source.annotate(jQuery.extend({
         comment: comment
-      });
+      }, eval('Drupal.' + comment.annotation.options)));
       return false;
     });
   }
@@ -141,7 +141,7 @@ Drupal.behaviors.annotation = function(context) {
 }
 
 jQuery.fn.annotate = function(options) {
-  var opts = jQuery.extend(jQuery.annotation.defaults, options);
+  var opts = jQuery.extend({}, jQuery.annotation.defaults, options);
   jQuery.annotation.active = true;
 
   if (opts.comment !== undefined) {

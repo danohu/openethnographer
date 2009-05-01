@@ -143,6 +143,7 @@ function annotation_text_annotations($vid) {
     $result = db_query("SELECT * FROM {annotation_text} WHERE vid = %d ORDER BY offset ASC, length ASC", $vid);
     while ($annotation = db_fetch_object($result)) {
       $annotations[$vid]['c'. $annotation->cid] = $annotation;
+      $annotations[$vid]['c'. $annotation->cid]->options = 'textAnnotationOptions';
     }
   }
 

@@ -23,8 +23,9 @@ Drupal.behaviors.imageAnnotation = function(context) {
 
 Drupal.imageAnnotationOptions = {
   preShow: function() {
-    $this = $(this);
-    $canvas = $this.parents('.image-annotate-canvas');
+    var $this = $(this);
+    var $canvas = $this.parents('.image-annotate-canvas');
+    $this.find('>div').hide();
     $this.resizable({
       handles: 'all',
   	  resize: function(e, ui) {
@@ -49,10 +50,11 @@ Drupal.imageAnnotationOptions = {
     })
     .draggable({
       containment: $canvas,
-    });
+    })
+    .data('imageAnnotationOriginalPosition', $this.position());
   },
   submit: function() {
-    $this = $(this);
+    var $this = $(this);
     $('#edit-annotation-image-field', this.annotationForm).attr('value', $this.parents('.field-item').find('>a.image-annotate-add').attr('id').match(/[^-]*$/));
     $('#edit-annotation-image-top', this.annotationForm).attr('value', $this.position().top);
     $('#edit-annotation-image-left', this.annotationForm).attr('value', $this.position().left);
@@ -60,12 +62,15 @@ Drupal.imageAnnotationOptions = {
     $('#edit-annotation-image-height', this.annotationForm).attr('value', $this.height());
   },
   postHide: function() {
-    $(this).resizable('destroy')
+    var $this = $(this);
+    var position = $this.data('imageAnnotationOriginalPosition');
+    $this.resizable('destroy')
     .draggable('destroy')
     .css('height', '')
     .css('width', '')
-    .css('left', '')
-    .css('top', '')
+    .css('left', position.left + 'px')
+    .css('top', position.top + 'px')
     .parents('.image-annotate-edit').hide();
+    $this.find('>div').show();
   }
 };
