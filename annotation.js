@@ -42,7 +42,8 @@ Drupal.settings.annotationBtStyle = jQuery.extend({
 
     // Remove annotation on cancel.
     $('a.cancel', source.annotationForm).click(function() {
-      source.removeAnnotate();
+      source.removeAnnotate().removeClass('annotation-processed');
+      Drupal.behaviors.annotation(source.parent());
       return false;
     });
 
