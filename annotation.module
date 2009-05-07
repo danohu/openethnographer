@@ -16,9 +16,11 @@ function annotation_add_js($node, $type, $fields = array()) {
   beautytips_add_beautytips();
   drupal_add_css(drupal_get_path('module', 'annotation') .'/annotation.css');
   drupal_add_js(drupal_get_path('module', 'annotation') .'/annotation.js');
-  drupal_add_js(array('annotation' => array(
-    'form' => drupal_get_form('annotation_form', $node, $type, $fields),
-  )), 'setting');  
+  if (user_access('post comments')) {
+    drupal_add_js(array('annotation' => array(
+      'form' => drupal_get_form('annotation_form', $node, $type, $fields),
+    )), 'setting');  
+  }
 
   $annotations = module_invoke_all('annotations', $node->vid);
   foreach ($annotations as $annotation) {
