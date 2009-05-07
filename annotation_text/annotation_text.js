@@ -82,10 +82,12 @@ function annotationTextAttachMouseup(e) {
  * Remove unused annotation tips.
  */
 function annotationTextRemove() {
-  $('.annotation-text-selected').each(function() {
-    var $this = $(this);
-    $this.after($this.html()).remove();
-  });
+  if (!jQuery.annotation.active) {
+    $('.annotation-text-selected').each(function() {
+      var $this = $(this);
+      $this.after($this.html()).remove();
+    });
+  }
 }
 
 /**

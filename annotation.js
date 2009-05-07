@@ -165,8 +165,8 @@ jQuery.fn.annotate = function(options) {
   this.get(0).removeAnnotate = function() {
     opts.preHide.apply(this);
     this.btOff();
-    opts.postHide.apply(this);
     jQuery.annotation.active = false;
+    opts.postHide.apply(this);
     return this;
   };
 
