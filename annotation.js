@@ -126,7 +126,7 @@ Drupal.behaviors.annotation = function(context) {
     });
 
     this.showAnnotation = function() {
-      $this.parents('.annotated').trigger('mouseenter');
+      $this.parents().show();
       this.annotationOver();
       $this.data('bt-box').annotationOverCount = 0;
       // Hack with html & body scrolling so that it works in Safari
