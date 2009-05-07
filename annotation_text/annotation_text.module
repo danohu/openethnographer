@@ -26,33 +26,35 @@ function annotation_text_form(&$node, $form_state) {
  * Implementation of hook_nodeapi
  */
 function annotation_text_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
-  switch ($op) {
-    case 'view':
-      if ($node->type == 'annotation_text') {
-        annotation_add_js($node, 'annotation_text', array('offset', 'length', 'string'));
-        drupal_add_js(drupal_get_path('module', 'annotation_text') .'/jquery.wrapSelection.js');
-        drupal_add_js(drupal_get_path('module', 'annotation_text') .'/annotation_text.js');
-        drupal_add_css(drupal_get_path('module', 'annotation_text') .'/annotation_text.css');
+  if (user_access('access comments')) {
+    switch ($op) {
+      case 'view':
+        if ($node->type == 'annotation_text') {
+          annotation_add_js($node, 'annotation_text', array('offset', 'length', 'string'));
+          drupal_add_js(drupal_get_path('module', 'annotation_text') .'/jquery.wrapSelection.js');
+          drupal_add_js(drupal_get_path('module', 'annotation_text') .'/annotation_text.js');
+          drupal_add_css(drupal_get_path('module', 'annotation_text') .'/annotation_text.css');
 
-        // Wrap node body in base annotation_text element. This is required to
-        // remove dependence on theme, and remove extra white space.
-        $node->content['body']['#value'] = '<div class="annotation-text-body">'. $node->content['body']['#value'] .'</div>';
+          // Wrap node body in base annotation_text element. This is required to
+          // remove dependence on theme, and remove extra white space.
+          $node->content['body']['#value'] = '<div class="annotation-text-body">'. $node->content['body']['#value'] .'</div>';
 
-        // add in config data
-        drupal_add_js(array('annotation_text' => array(
-          'sections' => array('#node-'. $node->nid .' .annotation-text-body' => 'node'),
-          'prompt' => '<a class="annotation-text-selected-link" href="#">'. t('Annotate') .'</a>',
-        )), 'setting');  
-      }
-      break;
+          // add in config data
+          drupal_add_js(array('annotation_text' => array(
+            'sections' => array('#node-'. $node->nid .' .annotation-text-body' => 'node'),
+            'prompt' => '<a class="annotation-text-selected-link" href="#">'. t('Annotate') .'</a>',
+          )), 'setting');  
+        }
+        break;
 
-    case 'load':
-      // TODO: find a better way of passing filter context
-      if ($node->type == 'annotation_text') {
-        $node->body = _annotation_text_add_context($node->body, $node);
-        $node->teaser = _annotation_text_add_context($node->teaser, $node);
-      }
-      break;
+      case 'load':
+        // TODO: find a better way of passing filter context
+        if ($node->type == 'annotation_text') {
+          $node->body = _annotation_text_add_context($node->body, $node);
+          $node->teaser = _annotation_text_add_context($node->teaser, $node);
+        }
+        break;
+    }
   }
 }
 
