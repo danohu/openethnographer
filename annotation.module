@@ -125,6 +125,7 @@ function annotation_form(&$form_state, $node, $type, $fields = array()) {
 
 function annotation_form_submit($form, &$form_state) {
   comment_form_submit($form, $form_state);
+  $form_state['redirect'][2] = str_replace('comment-', 'annotation-cid-', $form_state['redirect'][2]);
 }
 
 function annotation_link($type, $object, $teaser = FALSE) {
