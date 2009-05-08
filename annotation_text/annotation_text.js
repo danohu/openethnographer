@@ -13,7 +13,7 @@ Drupal.behaviors.annotationText = function(context) {
         $(this).addClass('annotation-text-processed');
 
         // add selection handling
-        if (Drupal.settings.annotation_form !== undefined) {
+        if (Drupal.settings.annotation.form !== undefined) {
           annotationTextAttachMouseup(this);
         }
       });
