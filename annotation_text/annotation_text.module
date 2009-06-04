@@ -175,6 +175,7 @@ function annotation_text_filter_process($text, $format) {
       if (($annotation->matched_offset = _annotation_text_closest_match($clean, $annotation->string, $annotation->offset, $annotation->length)) !== FALSE) {
         // correct matched_offset due to html tags
         $annotation->corrected_offset = _annotation_text_correct_offset($annotation->matched_offset, $adjustments);
+        $annotation->corrected_length = _annotation_text_correct_offset($annotation->matched_offset + $annotation->length, $adjustments) - $annotation->corrected_offset;
         $annotations[] = $annotation;
       }
     }
@@ -202,7 +203,7 @@ function annotation_text_filter_process($text, $format) {
           if (($annotation->corrected_offset <= $offset) && ($offset < ($annotation->corrected_offset + $annotation->length))) {
             $corrected_annotation = array(
               'offset' => $offset,
-              'length' => $annotation->length - ($offset - $annotation->corrected_offset),
+              'length' => $annotation->corrected_length - ($offset - $annotation->corrected_offset),
               'cids' => array($annotation->cid => $annotation->cid),
             );
             $found = TRUE;
@@ -217,7 +218,7 @@ function annotation_text_filter_process($text, $format) {
               $offset = $annotation->corrected_offset;
               $corrected_annotation = array(
                 'offset' => $offset,
-                'length' => $annotation->length,
+                'length' => $annotation->corrected_length,
                 'cids' => array($annotation->cid => $annotation->cid),
               );
               $found = TRUE;
@@ -241,7 +242,7 @@ function annotation_text_filter_process($text, $format) {
           
           // if same offset, but shorter length
           if (($annotation->corrected_offset == $offset) && ($annotation->length < $corrected_annotation['length'])) {
-            $corrected_annotation['length'] = $annotation->length;
+            $corrected_annotation['length'] = $annotation->corrected_length;
           }
           // else, if higher offset, but less than curent length
           elseif (($annotation->corrected_offset > $offset) && ($annotation->corrected_offset < ($offset + $corrected_annotation['length']))) {
@@ -249,7 +250,7 @@ function annotation_text_filter_process($text, $format) {
           }
           // else, if lower offset, but end is in range
           elseif (($annotation->corrected_offset < $offset) && (($annotation->corrected_offset + $annotation->length) > $offset) && (($annotation->corrected_offset + $annotation->length) < ($offset + $corrected_annotation['length']))) {
-            $corrected_annotation['length'] = ($annotation->corrected_offset + $annotation->length) - $offset;
+            $corrected_annotation['length'] = ($annotation->corrected_offset + $annotation->corrected_length) - $offset;
           }
         }
         
