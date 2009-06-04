@@ -320,7 +320,7 @@ function _annotation_text_get_offset_adjustments($html) {
   $adjustments = array();
   
   // match html tags/comments
-  if (preg_match_all('@</?\w+((\s+\w+(\s*=\s*(?:".*?"|\'.*?\'|[^\'">\s]+))?)+\s*|\s*)/?>|<!--.*?-->@', $html, $matches, PREG_OFFSET_CAPTURE, $offset)) {
+  if (preg_match_all('@</?\w+((\s+\w+(\s*=\s*(?:".*?"|\'.*?\'|[^\'">\s]+))?)+\s*|\s*)/?>|<!--.*?-->|\n+@', $html, $matches, PREG_OFFSET_CAPTURE, $offset)) {
     foreach ($matches[0] as $match) {
       $adjustments[$match[1]] = $match[0];
     }

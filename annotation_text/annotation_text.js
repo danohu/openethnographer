@@ -1,8 +1,8 @@
 Drupal.behaviors.annotationText = function(context) {
   // Annotate link.
   $('a.annotation-text-selected-link:not(.processed)').addClass('processed').click(function() {
-    // Attach BT bubble to first selected span.
-    $('.annotation-text-selected:first').annotate(Drupal.textAnnotationOptions);
+    // Attach BT bubble to last selected span.
+    $('.annotation-text-selected:last').annotate(Drupal.textAnnotationOptions);
 
     return false;
   });
@@ -24,11 +24,10 @@ Drupal.behaviors.annotationText = function(context) {
 Drupal.textAnnotationOptions = {
   submit: function() {
     // Fill hidden form elements with offset data.
-    $this = $(this);
-    var offset = $this.data('annotationTextOffset');
-    $('#edit-annotation-text-offset', this.annotationForm).attr('value', offset.offset);
-    $('#edit-annotation-text-length', this.annotationForm).attr('value', offset.length);
-    $('#edit-annotation-text-string', this.annotationForm).attr('value', $this.text());
+    var text = $('.annotation-text-selected').text();
+    $('#edit-annotation-text-offset', this.annotationForm).attr('value', $(this).data('annotationTextOffset'));
+    $('#edit-annotation-text-string', this.annotationForm).attr('value', text);
+    $('#edit-annotation-text-length', this.annotationForm).attr('value', text.length);
   },
   postHide: annotationTextRemove
 };
@@ -72,11 +71,8 @@ function annotationTextAttachMouseup(e) {
     // selection now that we are done modifying the DOM.
     annotation_text_select_node($sel);
 
-    // Calculate offset data for each selection span.
-    localContext = this;
-    $('.annotation-text-selected').each(function() {
-      $(this).data('annotationTextOffset', annotationTextOffset(this, localContext));
-    });
+    // Calculate offset for the first span.
+    $('.annotation-text-selected:last').data('annotationTextOffset', annotationTextOffset($('.annotation-text-selected:first'), this));
   });
 }
 
@@ -123,16 +119,12 @@ function annotation_text_select_node(e) {
 /**
  * Calculates offset data for e. Offsets are based upon context.
  */
-function annotationTextOffset(e, context) {
-  var $curr = $(e);
-  var offset = {
-    offset: 0,
-    length: $curr.text().length,
-  }
+function annotationTextOffset($curr, context) {
+  var offset = 0;
 
   // Backtrack to parent context.
   while ($curr.length && ($curr.get(0) != context)) {
-    offset.offset += annotationTextGetElementOffset($curr);
+    offset += annotationTextGetElementOffset($curr);
     $curr = $curr.parent();
   }
 
@@ -170,10 +162,6 @@ function annotationTextGetElementOffset(e) {
 
   return offset;
 }
-
-/**
- * The opposite of $.wrap()
- */
 
 /**
  * Attempt to collapse selection spans that are right next to each other.
