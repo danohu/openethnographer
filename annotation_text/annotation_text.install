@@ -56,3 +56,32 @@ function annotation_text_schema() {
 function annotation_text_uninstall() {
   drupal_uninstall_schema('annotation_text');
 }
+
+/**
+ * Create a dynamic node type for annotation_text.
+ */
+function annotation_text_update_1() {
+  $return = array();
+
+  $info = new stdClass();
+  $info->type = 'annotation_text';
+  $info->name = t('Text Annotations');
+  $info->description = t('A text annotation.');
+  $info->body_label = t('Body');
+  $info->module = 'node';
+  $info->has_body = TRUE;
+  $info->custom = TRUE;
+  $info->modified = TRUE;
+  $info->locked = FALSE;
+
+  $types = node_get_types();
+  if (isset($types['annotation_text'])) {
+    $info->name = $types['annotation_text']->name;
+    $info->description = $types['annotation_text']->description;
+    $info->body_label = $types['annotation_text']->body_label;
+  }
+
+  node_type_save($info);
+
+  return $return;
+}
