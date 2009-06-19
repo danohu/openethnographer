@@ -7,7 +7,7 @@ function annotation_image_comment(&$comment, $op) {
   switch ($op) {
     case 'insert':
     case 'update':
-      if (isset($comment['annotation_image'])) {
+      if (isset($comment['annotation_image']) && $comment['pid'] === '0') {
         $node = node_load($comment['nid']);
         $annotation = array(
           'vid' => $node->vid,

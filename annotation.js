@@ -32,6 +32,8 @@ Drupal.settings.annotationBtStyle = jQuery.extend({
       if (comment !== undefined) {
         $edit.attr('value', comment.comment).keyup();
         $('#edit-cid', source.annotationForm).attr('value', comment.cid);
+        $('#edit-pid', source.annotationForm).attr('value', comment.pid);
+        $('#edit-uid', source.annotationForm).attr('value', comment.uid);
       }
 
       // Call back the submit event.
@@ -59,7 +61,7 @@ Drupal.settings.annotationBtStyle = jQuery.extend({
 
     // Edit annotation link.
     $('a[href*=#annotation-edit]', source.annotationBox).click(function () {
-      var comment = Drupal.settings.annotationCommentsSource[source.attr('class').match(/\bannotation-(cid-\d+)\b/)[1]];
+      var comment = Drupal.settings.annotationCommentsSource['cid-' + $(this).attr('href').match(/#annotation-edit-(\d+)\b/)[1]];
       source.annotate(jQuery.extend({
         comment: comment
       }, Drupal[comment.annotation.options]));
@@ -92,7 +94,7 @@ Drupal.behaviors.annotation = function (context) {
     // Count over & out for both annotation and beautytip for linked hovering.
     this.annotationOver = function (event) {
       var box = $this.data('bt-box');
-      if (box === undefined) {
+      if (box === undefined && this.btOn !== undefined) {
         this.btOn();
         box = $this.data('bt-box');
         box.annotationOverCount = 0;
