@@ -26,8 +26,13 @@ function annotation_add_js($node, $type, $fields = array()) {
   foreach ($annotations as $annotation) {
     $comment = _comment_load($annotation->cid);
     $comment->annotation = $annotation;
+    $content = theme('annotation_comment', $comment);
+    $result = db_query('SELECT * FROM {comments} WHERE pid = %d ORDER BY cid', $annotation->cid);
+    while ($reply = db_fetch_object($result)) {
+      $content .= theme('annotation_comment', $reply, TRUE);
+    }
     drupal_add_js(array('annotationComments' => array(
-      'cid-'. $comment->cid => theme('annotation_comment', $comment),
+      'cid-'. $comment->cid => $content,
     )), 'setting');
     drupal_add_js(array('annotationCommentsSource' => array(
       'cid-'. $comment->cid => $comment,
@@ -51,6 +56,7 @@ function annotation_theme($existing, $type, $theme, $path) {
     'annotation_comment' => array(
       'arguments' => array(
         'comment' => NULL,
+        'reply' => FALSE,
       ),
       'path' => $path .'/templates/',
       'template' => 'annotation_comment',
@@ -62,13 +68,14 @@ function annotation_preprocess_annotation_comment($arguments, $hook) {
   $arguments['name'] = theme('username', $arguments['comment']);
   $arguments['time'] = format_date($arguments['comment']->timestamp, 'small');
   $arguments['body'] = check_markup($arguments['comment']->comment, $arguments['comment']->format);
-  $links = array(
-    'annotation_full_thread' => array(
+  $links = array();
+  if (!$arguments['reply']) {
+    $links['annotation_full_thread'] = array(
       'title' => t('View full thread'),
       'href' => $_REQUEST['q'],
       'fragment' => 'comment-'. $arguments['comment']->cid,
-    ),
-  );
+    );
+  }
   if (user_access('post comments') && comment_access('edit', $arguments['comment'])) {
     $links['annotation_edit'] = array(
       'title' => t('Edit'),
