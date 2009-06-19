@@ -6,8 +6,8 @@ Drupal.settings.annotationBtStyle = jQuery.extend({
   spikeLength: 8,
   spikeGirth: 6,
   positions: ['bottom'],
-  postShow: function() {
-    $('.bt-content').each(function() {
+  postShow: function () {
+    $('.bt-content').each(function () {
       Drupal.attachBehaviors(this);
     });
 
@@ -18,7 +18,7 @@ Drupal.settings.annotationBtStyle = jQuery.extend({
     if (source.annotationForm.length) {
       // Disable submit button when there is empty content.
       var $submit = $('#edit-submit', source.annotationForm);
-      var $edit = $('#edit-comment', source.annotationForm).focus().keyup(function() {
+      var $edit = $('#edit-comment', source.annotationForm).focus().keyup(function () {
         if ($(this).attr('value') === '') {
           $submit.attr('disabled', 'disabled');
         }
@@ -35,20 +35,20 @@ Drupal.settings.annotationBtStyle = jQuery.extend({
       }
 
       // Call back the submit event.
-      source.annotationForm.submit(function() {
+      source.annotationForm.submit(function () {
         source.submitAnnotate();
       });
     }
 
     // Remove annotation on cancel.
-    $('a.cancel', source.annotationForm).click(function() {
+    $('a.cancel', source.annotationForm).click(function () {
       source.removeAnnotate().removeClass('annotation-processed');
       Drupal.behaviors.annotation(source.parent());
       return false;
     });
 
     // Highlight clicked comment.
-    $('a[href*=#comment-]', source.annotationBox).click(function() {
+    $('a[href*=#comment-]', source.annotationBox).click(function () {
       $('.annotation-active').removeClass('annotation-active');
       var $comment = $('' + $(this).attr('href').match(/#comment-\d*/));
       if ($comment.is('a')) {
@@ -58,31 +58,31 @@ Drupal.settings.annotationBtStyle = jQuery.extend({
     });
 
     // Edit annotation link.
-    $('a[href*=#annotation-edit]', source.annotationBox).click(function() {
+    $('a[href*=#annotation-edit]', source.annotationBox).click(function () {
       var comment = Drupal.settings.annotationCommentsSource[source.attr('class').match(/\bannotation-(cid-\d+)\b/)[1]];
       source.annotate(jQuery.extend({
         comment: comment
-      }, eval('Drupal.' + comment.annotation.options)));
+      }, Drupal[comment.annotation.options]));
       return false;
     });
   }
 }, Drupal.settings.annotationBtStyle);
 
-$(document).ready(function() {
+$(document).ready(function () {
   // If the URL contains a fragment starting with image-annotate we define the cid of the note to highlight/show
-  var url = document.location.toString();
-  if (url = url.match(/#annotation-cid-(\d+)$/)) {
+  var url = document.location.toString().match(/#annotation-cid-(\d+)$/);
+  if (url !== null) {
     Drupal.showAnnotation(url[1]);
   }
 });
 
-Drupal.behaviors.annotation = function(context) {
-  var annotationRegExp = /\bannotation-(cid-\d+)\b/g;
-  var annotation;
+Drupal.behaviors.annotation = function (context) {
+  var annotationRegExp = /\bannotation-(cid-\d+)\b/g,
+    annotation;
 
   $('.annotation:not(.annontation-processed)', context).addClass('annotation-processed').each(function () {
-    var $this = $(this);
-    var content = '';
+    var $this = $(this),
+      content = '';
 
     // Find the comments.
     while ((annotation = annotationRegExp.exec($this.attr('class'))) !== null) {
@@ -90,13 +90,13 @@ Drupal.behaviors.annotation = function(context) {
     }
 
     // Count over & out for both annotation and beautytip for linked hovering.
-    this.annotationOver = function(event) {
+    this.annotationOver = function (event) {
       var box = $this.data('bt-box');
       if (box === undefined) {
         this.btOn();
         box = $this.data('bt-box');
         box.annotationOverCount = 0;
-        box.annotationOff = function() {
+        box.annotationOff = function () {
           $this.btOff();
         };
         box.hoverIntent({
@@ -106,8 +106,8 @@ Drupal.behaviors.annotation = function(context) {
         });
       }
       box.annotationOverCount += 1;
-    }
-    this.annotationOut = function(event) {
+    };
+    this.annotationOut = function (event) {
       var box = $this.data('bt-box');
       if (box !== undefined) {
         box.annotationOverCount -= 1;
@@ -115,7 +115,7 @@ Drupal.behaviors.annotation = function(context) {
           box.annotationOff();
         }
       }
-    }
+    };
 
     // Add BT bubble containing comments.
     $this.bt(content, jQuery.extend({
@@ -125,7 +125,7 @@ Drupal.behaviors.annotation = function(context) {
       out: this.annotationOut
     });
 
-    this.showAnnotation = function() {
+    this.showAnnotation = function () {
       $this.parents().show();
       this.annotationOver();
       $this.data('bt-box').annotationOverCount = 0;
@@ -135,13 +135,13 @@ Drupal.behaviors.annotation = function(context) {
   });
 
   // Replace the target of the comment links.
-  $('a.annotation-link:not(.annotation-processed)', context).addClass('annotation-processed').click(function() {
+  $('a.annotation-link:not(.annotation-processed)', context).addClass('annotation-processed').click(function () {
     Drupal.showAnnotation($(this).attr('href').split(/#annotation-cid-(\d+)$/)[1]);
     return false;
   });
-}
+};
 
-jQuery.fn.annotate = function(options) {
+jQuery.fn.annotate = function (options) {
   var opts = jQuery.extend({}, jQuery.annotation.defaults, options);
   jQuery.annotation.active = true;
 
@@ -155,14 +155,14 @@ jQuery.fn.annotate = function(options) {
   this.bt(Drupal.settings.annotation.form, jQuery.extend({
     trigger: 'none',
     clickAnywhereToClose: false,
-    closeWhenOthersOpen: false,
+    closeWhenOthersOpen: false
   }, Drupal.settings.annotationBtStyle)).btOn()
   .bind('dragstart', Drupal.saveAnnotationState)
   .bind('resizestart', Drupal.saveAnnotationState)
   .bind('dragstop', Drupal.restoreAnnotationState)
   .bind('resizestop', Drupal.restoreAnnotationState);
 
-  this.get(0).removeAnnotate = function() {
+  this.get(0).removeAnnotate = function () {
     opts.preHide.apply(this);
     this.btOff();
     jQuery.annotation.active = false;
@@ -170,51 +170,51 @@ jQuery.fn.annotate = function(options) {
     return this;
   };
 
-  this.get(0).submitAnnotate = function() {
+  this.get(0).submitAnnotate = function () {
     opts.submit.apply(this);
   };
 
   return this;
 };
 
-jQuery.fn.removeAnnotate = function() {
-  return this.each(function() {
+jQuery.fn.removeAnnotate = function () {
+  return this.each(function () {
     if ($.isFunction(this.removeAnnotate)) {
       this.removeAnnotate();
     }
   });
 };
 
-jQuery.fn.submitAnnotate = function() {
-  return this.each(function() {
+jQuery.fn.submitAnnotate = function () {
+  return this.each(function () {
     if ($.isFunction(this.submitAnnotate)) {
       this.submitAnnotate();
     }
   });
 };
 
-jQuery.fn.showAnnotation = function() {
-  return this.each(function() {
+jQuery.fn.showAnnotation = function () {
+  return this.each(function () {
     if ($.isFunction(this.showAnnotation)) {
       this.showAnnotation();
     }
   });
 };
 
-Drupal.showAnnotation = function(cid) {
+Drupal.showAnnotation = function (cid) {
   $('.annotation-cid-' + cid).showAnnotation();
-}
+};
 
-Drupal.saveAnnotationState = function() {
-  $this = $(this);
+Drupal.saveAnnotationState = function () {
+  var $this = $(this);
   $this.data('annotation-data', {
     '#edit-comment': $('#edit-comment', $this.data('bt-box')).attr('value')
   });
   this.btOff();
 };
 
-Drupal.restoreAnnotationState = function() {
-  $this = $(this);
+Drupal.restoreAnnotationState = function () {
+  var $this = $(this);
   this.btOn();
   $('#edit-comment', $this.data('bt-box')).attr('value', $this.data('annotation-data')['#edit-comment']).keyup();
   $this.removeData('annotation-data');
@@ -223,9 +223,17 @@ Drupal.restoreAnnotationState = function() {
 jQuery.annotation = {
   active: false, // Is there is an active annotation?
   defaults: {
-    submit:   function(){return;}, // Run on submit.
-    preShow:  function(){return;}, // run before popup is constructed.
-    preHide:  function(){return;}, // Run before popup is cancelled.
-    postHide: function(){return;}  // Run after popup is cancelled.
+    submit:   function () { // Run on submit.
+      return;
+    },
+    preShow:  function () { // run before popup is constructed.
+      return;
+    },
+    preHide:  function () { // Run before popup is cancelled.
+      return;
+    },
+    postHide: function () { // Run after popup is cancelled.
+      return;
+    }
   }
 };

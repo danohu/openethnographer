@@ -1,6 +1,6 @@
-Drupal.behaviors.annotationText = function(context) {
+Drupal.behaviors.annotationText = function (context) {
   // Annotate link.
-  $('a.annotation-text-selected-link:not(.processed)').addClass('processed').click(function() {
+  $('a.annotation-text-selected-link:not(.processed)').addClass('processed').click(function () {
     // Attach BT bubble to last selected span.
     $('.annotation-text-selected:last').annotate(Drupal.textAnnotationOptions);
 
@@ -19,10 +19,10 @@ Drupal.behaviors.annotationText = function(context) {
       });
     }
   }
-}
+};
 
 Drupal.textAnnotationOptions = {
-  submit: function() {
+  submit: function () {
     // Fill hidden form elements with offset data.
     var text = $('.annotation-text-selected').text();
     $('#edit-annotation-text-offset', this.annotationForm).attr('value', $(this).data('annotationTextOffset'));
@@ -36,7 +36,7 @@ Drupal.textAnnotationOptions = {
  * Attach mouseup handling to text body
  */
 function annotationTextAttachMouseup(e) {
-  $(e).bind('mouseup', function() {
+  $(e).bind('mouseup', function () {
     // Do nothing if there is an active annotation.
     if (jQuery.annotation.active) {
       return;
@@ -55,7 +55,7 @@ function annotationTextAttachMouseup(e) {
 
     // Create a BT with annotate link we have to set it on a timer due
     // to timing issues.
-    setTimeout(function() {
+    setTimeout(function () {
       $('.annotation-text-selected:last').bt(Drupal.settings.annotation_text.prompt, jQuery.extend({
         trigger: 'none',
         closeWhenOthersOpen: true,
@@ -81,7 +81,7 @@ function annotationTextAttachMouseup(e) {
  */
 function annotationTextRemove() {
   if (!jQuery.annotation.active) {
-    $('.annotation-text-selected').each(function() {
+    $('.annotation-text-selected').each(function () {
       var $this = $(this);
       $this.after($this.html()).remove();
     });
@@ -99,7 +99,7 @@ function annotation_text_select_node(e) {
 
   if ((doc = e[0].ownerDocument) && (win = doc.defaultView) && typeof win.getSelection != 'undefined' && typeof doc.createRange != 'undefined' && (selection = window.getSelection()) && typeof selection.removeAllRanges != 'undefined') {
     selection.removeAllRanges();
-    $(e).each(function() {
+    $(e).each(function () {
       range = doc.createRange();
       range.selectNode(this);
       selection.addRange(range);
@@ -167,7 +167,7 @@ function annotationTextGetElementOffset(e) {
  * Attempt to collapse selection spans that are right next to each other.
  */
 function annotation_text_collapse(context) {
-  $('.annotation-text-selected', context).each(function() {
+  $('.annotation-text-selected', context).each(function () {
     var first = this;
     var classes = $(first).attr('class').split(' ');
 
