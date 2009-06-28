@@ -60,11 +60,25 @@ Drupal.settings.annotationBtStyle = jQuery.extend({
     });
 
     // Edit annotation link.
-    $('a[href*=#annotation-edit]', source.annotationBox).click(function () {
-      var comment = Drupal.settings.annotationCommentsSource['cid-' + $(this).attr('href').match(/#annotation-edit-(\d+)\b/)[1]];
-      source.annotate(jQuery.extend({
-        comment: comment
-      }, Drupal[comment.annotation.options]));
+    $('a[href*=#annotation-]', source.annotationBox).click(function () {
+      var match = $(this).attr('href').match(/#annotation-(edit|reply)-(\d+)\b/);
+      var comment = Drupal.settings.annotationCommentsSource['cid-' + match[2]];
+      switch (match[1]) {
+        case 'edit':
+          source.annotate(jQuery.extend({
+            comment: comment
+          }, Drupal[comment.annotation.options]));
+          break;
+
+        case 'reply':
+          source.annotate(jQuery.extend({
+            comment: {
+              pid: comment.cid,
+              comment: ''
+            }
+          }, Drupal[comment.annotation.options]));
+          break;
+      }
       return false;
     });
   }
@@ -94,7 +108,8 @@ Drupal.behaviors.annotation = function (context) {
     // Count over & out for both annotation and beautytip for linked hovering.
     this.annotationOver = function (event) {
       var box = $this.data('bt-box');
-      if (box === undefined && this.btOn !== undefined) {
+      if (box === undefined) {
+        console.log(this);
         this.btOn();
         box = $this.data('bt-box');
         box.annotationOverCount = 0;

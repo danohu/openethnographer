@@ -27,6 +27,11 @@ function annotation_add_js($node, $type, $fields = array()) {
     $comment = _comment_load($annotation->cid);
     $comment->annotation = $annotation;
     $content = theme('annotation_comment', $comment);
+    drupal_add_js(array('annotationCommentsSource' => array(
+      'cid-'. $comment->cid => $comment,
+    )), 'setting');
+
+    // Replies
     $result = db_query('SELECT * FROM {comments} WHERE pid = %d ORDER BY cid', $annotation->cid);
     while ($reply = db_fetch_object($result)) {
       $reply->annotation = $annotation;
@@ -35,11 +40,21 @@ function annotation_add_js($node, $type, $fields = array()) {
         'cid-'. $reply->cid => $reply,
       )), 'setting');
     }
+
+    // Links
+    $links = array();
+    if (user_access('post comments')) {
+      $links['annotation_reply'] = array(
+        'title' => t('Reply'),
+        'href' => $_REQUEST['q'],
+        'fragment' => 'annotation-reply-'. $comment->cid,
+      );
+    }
+    drupal_alter('link', $links, $arguments['comment']);
+    $content .= theme('links', $links);
+
     drupal_add_js(array('annotationComments' => array(
       'cid-'. $comment->cid => $content,
-    )), 'setting');
-    drupal_add_js(array('annotationCommentsSource' => array(
-      'cid-'. $comment->cid => $comment,
     )), 'setting');
   }
 }
@@ -144,7 +159,12 @@ function annotation_form_submit($form, &$form_state) {
   $account = user_load($form_state['values']['uid']);
   $form_state['values']['name'] = $account->name;
   comment_form_submit($form, $form_state);
-  $form_state['redirect'][2] = str_replace('comment-', 'annotation-cid-', $form_state['redirect'][2]);
+  if (empty($form_state['values']['pid'])) {
+    $form_state['redirect'][2] = str_replace('comment-', 'annotation-cid-', $form_state['redirect'][2]);
+  }
+  else {
+    $form_state['redirect'][2] = 'annotation-cid-'. $form_state['values']['pid'];
+  }
 }
 
 function annotation_link($type, $object, $teaser = FALSE) {
