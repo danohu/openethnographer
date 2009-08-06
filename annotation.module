@@ -46,11 +46,11 @@ function annotation_add_js($node, $type, $fields = array()) {
     if (user_access('post comments')) {
       $links['annotation_reply'] = array(
         'title' => t('Reply'),
-        'href' => $_REQUEST['q'],
+        'href' => isset($_REQUEST['q']) ? $_REQUEST['q'] : '',
         'fragment' => 'annotation-reply-'. $comment->cid,
       );
     }
-    drupal_alter('link', $links, $arguments['comment']);
+    drupal_alter('link', $links, $comment);
     $content .= theme('links', $links);
 
     drupal_add_js(array('annotationComments' => array(
@@ -88,17 +88,18 @@ function annotation_preprocess_annotation_comment($arguments, $hook) {
   $arguments['time'] = format_date($arguments['comment']->timestamp, 'small');
   $arguments['body'] = check_markup($arguments['comment']->comment, $arguments['comment']->format);
   $links = array();
+  $href = isset($_REQUEST['q']) ? $_REQUEST['q'] : '';
   if (!$arguments['reply']) {
     $links['annotation_full_thread'] = array(
       'title' => t('View full thread'),
-      'href' => $_REQUEST['q'],
+      'href' => $href,
       'fragment' => 'comment-'. $arguments['comment']->cid,
     );
   }
   if (user_access('post comments') && comment_access('edit', $arguments['comment'])) {
     $links['annotation_edit'] = array(
       'title' => t('Edit'),
-      'href' => $_REQUEST['q'],
+      'href' => $href,
       'fragment' => 'annotation-edit-'. $arguments['comment']->cid,
     );
   }
@@ -184,4 +185,9 @@ function annotation_link($type, $object, $teaser = FALSE) {
       );
     }
   }
+}
+
+function annotation_preprocess_comment_view() {
+  dpr('!!!!!');
+  dpr(func_get_args());
 }
