@@ -1,3 +1,5 @@
+// $Id$
+
 Drupal.behaviors.annotationText = function (context) {
   // Annotate link.
   $('a.annotation-text-selected-link:not(.processed)').addClass('processed').click(function () {

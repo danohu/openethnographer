@@ -1,3 +1,5 @@
+// $Id$
+
 // Set default annotation style, overridable with drupal_add_js().
 Drupal.settings.annotationBtStyle = jQuery.extend({
   width: 250,

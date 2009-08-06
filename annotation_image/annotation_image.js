@@ -1,3 +1,5 @@
+// $Id$
+
 Drupal.behaviors.imageAnnotation = function (context) {
   $('.image-annotate-canvas:not(image-annotate-processed)', context).addClass('image-annotate-processed').each(function () {
     var $this = $(this);
