@@ -111,7 +111,6 @@ Drupal.behaviors.annotation = function (context) {
     this.annotationOver = function (event) {
       var box = $this.data('bt-box');
       if (box === undefined) {
-        console.log(this);
         this.btOn();
         box = $this.data('bt-box');
         box.annotationOverCount = 0;
