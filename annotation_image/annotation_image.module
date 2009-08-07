@@ -108,7 +108,14 @@ function theme_annotation_image_formatter_annotation_image($element) {
   if (empty($item['filepath'])) {
     $item = array_merge($item, field_file_load($item['fid']));
   }
+  if (!isset($item['alt'])) {
+    $item['alt'] = '';
+  }
+  if (!isset($item['title'])) {
+    $item['title'] = '';
+  }
 
+  $output = '';
   if (user_access('access comments')) {
     // Sort by area (height*width) to make sure small annotations are always on
     // the top and avoid having some unhoverable ones.
@@ -124,7 +131,6 @@ function theme_annotation_image_formatter_annotation_image($element) {
     drupal_add_js(drupal_get_path('module', 'annotation_image') .'/annotation_image.js');
     drupal_add_css(drupal_get_path('module', 'annotation_image') .'/annotation_image.css');
 
-    $output = '';
     if (user_access('post comments') || user_access('post comments without approval')) {
       $output .= '<a class="image-annotate-add" id="image-annotate-add-'. $field['field_name'] .'">'. t('Add an annotation') .'</a>';
     }
