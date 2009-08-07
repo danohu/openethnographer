@@ -61,7 +61,7 @@ function annotation_image_annotations($vid) {
 
   if (!isset($annotations[$vid])) {
     $annotations[$vid] = array();
-    $result = db_query("SELECT i.* FROM {annotation_image} i WHERE i.vid = %d ORDER BY (i.size_height*i.size_width) ASC", $vid);
+    $result = db_query("SELECT i.* FROM {annotation_image} i WHERE i.vid = %d ORDER BY (i.size_height*i.size_width) DESC", $vid);
     while ($annotation = db_fetch_object($result)) {
       $annotations[$vid]['c'. $annotation->cid] = $annotation;
       $annotations[$vid]['c'. $annotation->cid]->options = 'imageAnnotationOptions';
