@@ -77,7 +77,10 @@ function annotation_image_annotations($vid) {
 function annotation_image_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
   switch ($op) {
     case 'delete':
-      db_query("DELETE FROM {annotation_image} WHERE nid = %d", $node->nid);
+      $comments = db_query("SELECT cid FROM {comments} WHERE nid = %d", $node->nid);
+      while ($comment = db_fetch_object($comments)) {
+        db_query("DELETE FROM {annotation_image} WHERE cid = %d", $comment->cid);
+      }
       break;
   }
 }
