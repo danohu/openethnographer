@@ -189,6 +189,7 @@ jQuery.fn.annotate = function (options) {
   };
 
   this.get(0).submitAnnotate = function () {
+    $('#edit-submit', this.annotationForm).attr('disabled', 'disabled');
     opts.submit.apply(this);
   };
 
