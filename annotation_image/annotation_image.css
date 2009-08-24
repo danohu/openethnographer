@@ -115,11 +115,13 @@
 }
 
 .annotation-image-thumbnail-outer {
+  display: block;
   position: relative;
   float: left;
   margin-right: 0.5em;
 }
 
 .annotation-image-thumbnail-inner {
+  display: block;
   position: absolute;
 }
