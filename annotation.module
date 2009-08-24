@@ -23,8 +23,7 @@ function annotation_add_js($node, $type, $fields = array()) {
     )), 'setting');  
   }
 
-  $annotations = module_invoke_all('annotations', $node->vid);
-  foreach ($annotations as $annotation) {
+  foreach (annotation_get_annotations($node) as $annotation) {
     $comment = _comment_load($annotation->cid);
     $comment->annotation = $annotation;
     $content = theme('annotation_comment', $comment);
@@ -169,11 +168,28 @@ function annotation_form_submit($form, &$form_state) {
   }
 }
 
+function annotation_get_annotations($node) {
+  static $annotations;
+  if (is_null($annotations)) {
+    $annotations = module_invoke_all('annotations', $node->vid);
+  }
+  return $annotations;
+}
+
+function annotation_get_comment_annotation($comment) {
+  $node = node_load($comment->nid);
+  $annotations = annotation_get_annotations($node);
+  if (isset($annotations['c' . $comment->cid])) {
+    return $annotations['c' . $comment->cid];
+  }
+  else {
+    return NULL;
+  }
+}
+
 function annotation_link($type, $object, $teaser = FALSE) {
   if ($type === 'comment' && annotation_is_active()) {
-    $node = node_load($object->nid);
-    $annotations = module_invoke_all('annotations', $node->vid);
-    if (isset($annotations['c'. $object->cid])) {
+    if (!is_null(annotation_get_comment_annotation($object))) {
       return array(
         'annotation_link' => array(
           'title' => t('View annotation'),
