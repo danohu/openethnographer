@@ -187,8 +187,3 @@ function annotation_link($type, $object, $teaser = FALSE) {
     }
   }
 }
-
-function annotation_preprocess_comment_view() {
-  dpr('!!!!!');
-  dpr(func_get_args());
-}
