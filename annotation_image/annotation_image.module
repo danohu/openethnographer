@@ -1,6 +1,21 @@
 <?php
 // $Id$
 
+function annotation_image_menu() {
+  return array(
+    'admin/settings/annotation_image' => array(
+      'title' => 'Image annotation',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('annotation_image_settings_form'),
+      'access arguments' => array('administer annotation_image'),
+    ),
+  );
+}
+
+function annotation_image_perm() {
+  return array('administer annotation_image');
+}
+
 /**
  * Implementation of hook_comment
  */
@@ -33,7 +48,61 @@ function annotation_image_comment(&$comment, $op) {
     case 'delete':
       db_query('DELETE FROM {annotation_image} WHERE cid = %d', $comment->cid);
       break;
+
+    case 'view':
+      $annotation = annotation_get_comment_annotation($comment);
+      if (!is_null($annotation)) {
+        $comment->comment = theme('annotation_image_thumbnail', $annotation, $comment) . $comment->comment;
+      }
+      break;
   }
+}
+
+function annotation_image_imagecache_default_presets() {
+  return array(
+    'annotation_image_thumbnail_back' => array(
+      'presetname' => 'annotation_image_thumbnail_back',
+      'actions' => array(
+        array(
+          'weight' => '0',
+          'module' => 'imagecache',
+          'action' => 'imagecache_scale',
+          'data' => array(
+            'width' => variable_get('annotation_image_thumbnail_width', '100'),
+            'height' => variable_get('annotation_image_thumbnail_height', '100'),
+          ),
+        ),
+        array(
+          'weight' => '1',
+          'module' => 'imagecache',
+          'action' => 'imagecache_desaturate',
+          'data' => array(),
+        ),
+        array(
+          'weight' => '2',
+          'module' => 'imagecache_coloractions',
+          'action' => 'imagecache_brightness',
+          'data' => array(
+            'filter_arg1' => '64', 
+          ),
+        ),
+      ),
+    ),
+    'annotation_image_thumbnail_front' => array(
+      'presetname' => 'annotation_image_thumbnail_front',
+      'actions' => array(
+        array(
+          'weight' => '0',
+          'module' => 'imagecache',
+          'action' => 'imagecache_scale',
+          'data' => array(
+            'width' => variable_get('annotation_image_thumbnail_width', '100'),
+            'height' => variable_get('annotation_image_thumbnail_height', '100'),
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 /**
@@ -88,12 +157,41 @@ function annotation_image_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
 /**
  * Implementation of hook_theme
  */
-function annotation_image_theme() {
+function annotation_image_theme($existing, $type, $theme, $path) {
   return array(
+    'annotation_image_thumbnail' => array(
+      'arguments' => array(
+        'annotation' => NULL,
+        'comment' => NULL,
+      ),
+      'path' => $path . '/templates',
+      'template' => 'annotation-image-thumbnail',
+    ),
     'annotation_image_formatter_annotation_image' => array(
       'arguments' => array('element' => NULL),
     ),
   );
+}
+
+function annotation_image_preprocess_annotation_image_thumbnail(&$variables) {
+  $annotation = $variables['annotation'];
+  $comment = $variables['comment'];
+  $node = node_load($comment->nid);
+
+  list($image_width, $image_height) = getimagesize($node->{$annotation->field_name}[0]['filepath']);
+  $ratio = min(
+    variable_get('annotation_image_thumbnail_width', '100') / $image_width,
+    variable_get('annotation_image_thumbnail_height', '100') / $image_height
+  );
+
+  $variables['width'] = $image_width * $ratio;
+  $variables['height'] = $image_height * $ratio;
+  $variables['annotation_width'] = $annotation->size_width * $ratio;
+  $variables['annotation_height'] = $annotation->size_height * $ratio;
+  $variables['annotation_top'] = $annotation->position_top * $ratio;
+  $variables['annotation_left'] = $annotation->position_left * $ratio;
+  $variables['back'] = imagecache_create_url('annotation_image_thumbnail_back', $node->{$annotation->field_name}[0]['filename']);
+  $variables['front'] = imagecache_create_url('annotation_image_thumbnail_front', $node->{$annotation->field_name}[0]['filename']);
 }
 
 /**
@@ -154,4 +252,29 @@ function theme_annotation_image_formatter_annotation_image($element) {
   }
 
   return $output;
+}
+
+function annotation_image_settings_form(&$form_state) {
+  $form = array(
+    '#submit' => array('annotation_image_settings_form_submit'),
+  );
+
+  $form['annotation_image_thumbnail_width'] = array(
+    '#title' => t('Thumbnail width'),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('annotation_image_thumbnail_width', '100'),
+  );
+  $form['annotation_image_thumbnail_height'] = array(
+    '#title' => t('Thumbnail height'),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('annotation_image_thumbnail_height', '100'),
+  );
+
+  return system_settings_form($form);
+}
+
+function annotation_image_settings_form_submit($form, &$form_state) {
+  imagecache_preset_flush(imagecache_preset_by_name('annotation_image_thumbnail_back'));
+  imagecache_preset_flush(imagecache_preset_by_name('annotation_image_thumbnail_front'));
+  imagecache_presets(TRUE);
 }

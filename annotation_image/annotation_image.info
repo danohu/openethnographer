@@ -2,6 +2,8 @@
 name = Image Annotation
 description = Allows users to add annotations to sections of images
 dependencies[] = imagefield
+dependencies[] = imagecache
+dependencies[] = imagecache_coloractions
 dependencies[] = jquery_ui
 dependencies[] = annotation
 package = Annotation

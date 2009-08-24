@@ -113,3 +113,13 @@
 .image-annotate-edit-close {
   float: right;
 }
+
+.annotation-image-thumbnail-outer {
+  position: relative;
+  float: left;
+  margin-right: 0.5em;
+}
+
+.annotation-image-thumbnail-inner {
+  position: absolute;
+}
