@@ -60,36 +60,8 @@ function annotation_image_comment(&$comment, $op) {
 
 function annotation_image_imagecache_default_presets() {
   return array(
-    'annotation_image_thumbnail_back' => array(
-      'presetname' => 'annotation_image_thumbnail_back',
-      'actions' => array(
-        array(
-          'weight' => '0',
-          'module' => 'imagecache',
-          'action' => 'imagecache_scale',
-          'data' => array(
-            'width' => variable_get('annotation_image_thumbnail_width', '100'),
-            'height' => variable_get('annotation_image_thumbnail_height', '100'),
-          ),
-        ),
-        array(
-          'weight' => '1',
-          'module' => 'imagecache',
-          'action' => 'imagecache_desaturate',
-          'data' => array(),
-        ),
-        array(
-          'weight' => '2',
-          'module' => 'imagecache_coloractions',
-          'action' => 'imagecache_brightness',
-          'data' => array(
-            'filter_arg1' => '64', 
-          ),
-        ),
-      ),
-    ),
-    'annotation_image_thumbnail_front' => array(
-      'presetname' => 'annotation_image_thumbnail_front',
+    'annotation_image_thumbnail' => array(
+      'presetname' => 'annotation_image_thumbnail',
       'actions' => array(
         array(
           'weight' => '0',
@@ -179,10 +151,7 @@ function annotation_image_preprocess_annotation_image_thumbnail(&$variables) {
   $node = node_load($comment->nid);
 
   list($image_width, $image_height) = getimagesize($node->{$annotation->field_name}[0]['filepath']);
-  $ratio = min(
-    variable_get('annotation_image_thumbnail_width', '100') / $image_width,
-    variable_get('annotation_image_thumbnail_height', '100') / $image_height
-  );
+  $ratio = variable_get('annotation_image_thumbnail_width', '100') / max($image_width, $image_height);
 
   $variables['width'] = $image_width * $ratio;
   $variables['height'] = $image_height * $ratio;
@@ -190,8 +159,7 @@ function annotation_image_preprocess_annotation_image_thumbnail(&$variables) {
   $variables['annotation_height'] = $annotation->size_height * $ratio;
   $variables['annotation_top'] = $annotation->position_top * $ratio;
   $variables['annotation_left'] = $annotation->position_left * $ratio;
-  $variables['back'] = imagecache_create_url('annotation_image_thumbnail_back', $node->{$annotation->field_name}[0]['filename']);
-  $variables['front'] = imagecache_create_url('annotation_image_thumbnail_front', $node->{$annotation->field_name}[0]['filename']);
+  $variables['thumbnail'] = imagecache_create_url('annotation_image_thumbnail', $node->{$annotation->field_name}[0]['filename']);
 }
 
 /**
@@ -274,7 +242,6 @@ function annotation_image_settings_form(&$form_state) {
 }
 
 function annotation_image_settings_form_submit($form, &$form_state) {
-  imagecache_preset_flush(imagecache_preset_by_name('annotation_image_thumbnail_back'));
-  imagecache_preset_flush(imagecache_preset_by_name('annotation_image_thumbnail_front'));
+  imagecache_preset_flush(imagecache_preset_by_name('annotation_image_thumbnail'));
   imagecache_presets(TRUE);
 }
