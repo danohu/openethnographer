@@ -3,6 +3,5 @@ name = Annotation
 description = Provides a common API for annotatoin modules
 core = 6.x
 package = "Annotation"
-dependencies[] = jquery_update
 dependencies[] = jquery_ui
 dependencies[] = beautytips
