@@ -1,6 +1,6 @@
 ; $Id$
 name = Annotation
-description = Provides a common API for annotatoin modules
+description = Provides a common API for annotation modules
 core = 6.x
 package = "Annotation"
 dependencies[] = jquery_ui
