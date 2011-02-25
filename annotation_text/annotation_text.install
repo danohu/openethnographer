@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 function annotation_text_install() {
   drupal_install_schema('annotation_text');

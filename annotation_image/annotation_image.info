@@ -1,4 +1,3 @@
-; $Id$
 name = Image Annotation
 description = Allows users to add annotations to sections of images
 dependencies[] = imagefield

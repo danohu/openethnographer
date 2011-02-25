@@ -1,4 +1,3 @@
-// $Id$
 
 Drupal.behaviors.annotationText = function (context) {
   // Annotate link.

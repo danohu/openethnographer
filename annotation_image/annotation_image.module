@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 function annotation_image_perm() {
   return array('administer annotation_image');
