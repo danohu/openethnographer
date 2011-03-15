@@ -86,7 +86,7 @@ Drupal.settings.annotationBtStyle = jQuery.extend({
 }, Drupal.settings.annotationBtStyle);
 
 $(document).ready(function () {
-  // If the URL contains a fragment starting with image-annotate we define the cid of the note to highlight/show
+  // If the URL contains a fragment starting with annotation-cid we define the cid of the note to highlight/show
   var url = document.location.toString().match(/#annotation-cid-(\d+)$/);
   if (url !== null) {
     Drupal.showAnnotation(url[1]);

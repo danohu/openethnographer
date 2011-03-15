@@ -14,7 +14,7 @@ function annotation_text_form_node_type_form_submit($form, &$form_state) {
 }
 
 /**
- * Implementation of hook_nodeapi
+ * Implements hook_nodeapi().
  */
 function annotation_text_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
   if (user_access('access comments') && variable_get('annotation_text_body_'. $node->type, FALSE)) {
@@ -59,7 +59,7 @@ function _annotation_text_add_context($text, $node) {
 }
 
 /**
- * Implementation of hook_comment.
+ * Implements hook_comment().
  */
 function annotation_text_comment(&$a1, $op) {
   switch ($op) {
@@ -86,7 +86,7 @@ function annotation_text_comment(&$a1, $op) {
 }
 
 /**
- * Implementation of hook_filter
+ * Implements hook_filter().
  */
 function annotation_text_filter($op, $delta = 0, $format = -1, $text = '', $cache_id = 0) {
   switch ($op) {
@@ -98,7 +98,7 @@ function annotation_text_filter($op, $delta = 0, $format = -1, $text = '', $cach
     case 'description':
       switch ($delta) {
         case 0:
-          return t('Attaches user annotation_texts to text.');
+          return t('Attaches user annotations to text.');
 
         default:
           return;
@@ -297,23 +297,24 @@ function _annotation_text_correct_offset($offset, $adjustments) {
       $offset += strlen($string);
     }
   }
-  
+
   return $offset;
 }
 
 /**
- * Helper function that generates a list of adjustments based on HTML tags in the text
+ * Helper function that generates a list of adjustments based on HTML tags in
+ * the text
  */
 function _annotation_text_get_offset_adjustments($html) {
   $adjustments = array();
-  
+
   // match html tags/comments
   if (preg_match_all('@</?\w+((\s+\w+(\s*=\s*(?:".*?"|\'.*?\'|[^\'">\s]+))?)+\s*|\s*)/?>|<!--.*?-->|\n+@', $html, $matches, PREG_OFFSET_CAPTURE)) {
     foreach ($matches[0] as $match) {
       $adjustments[$match[1]] = $match[0];
     }
   }
-  
+
   return $adjustments;
 }
 
@@ -323,12 +324,12 @@ function _annotation_text_get_offset_adjustments($html) {
 function _annotation_text_get_clean_text($html, $adjustments) {
   $text = $html;
   $offset = 0;
-  
+
   foreach ($adjustments as $pos => $tag) {
     $text = substr_replace($text, '', $pos + $offset, strlen($tag));
     $offset -= strlen($tag);
   }
-  
+
   return $text;
 }
 
@@ -338,14 +339,14 @@ function _annotation_text_get_clean_text($html, $adjustments) {
 function _annotation_text_closest_match($haystack, $needle, $target, $length) {
   $results = array();
   $bestPos = FALSE;
-  
+
   // get positions
   $pos = strpos($haystack, $needle);
   while ($pos !== FALSE) {
     $results[] = $pos;
     $pos = strpos($haystack, $needle, $pos + 1);
   }
-  
+
   // find closest match
   if (count($results)) {
     $bestDiff = strlen($haystack) * 2; // extreme amount
@@ -357,6 +358,6 @@ function _annotation_text_closest_match($haystack, $needle, $target, $length) {
       }
     }
   }
-  
+
   return $bestPos;
 }

@@ -1,9 +1,15 @@
 <?php
 
+/**
+ * Implements hook_install().
+ */
 function annotation_text_install() {
   drupal_install_schema('annotation_text');
 }
 
+/**
+ * Implements hook_schema().
+ */
 function annotation_text_schema() {
   return array(
     'annotation_text' => array(
@@ -37,12 +43,12 @@ function annotation_text_schema() {
           'default' => 0,
           'description' => t('Selected text: length'),
         ),
-				'string' => array(
-					'type' => 'text',
-					'not null' => TRUE,
-					'default' => '',
-					'description' => t('Selected text: string'),
-				),
+        'string' => array(
+          'type' => 'text',
+          'not null' => TRUE,
+          'default' => '',
+          'description' => t('Selected text: string'),
+        ),
       ),
       'primary key' => array('vid', 'cid', 'offset'),
       'indexes' => array(
@@ -53,6 +59,9 @@ function annotation_text_schema() {
   );
 }
 
+/**
+ * Implements hook_uninstall().
+ */
 function annotation_text_uninstall() {
   drupal_uninstall_schema('annotation_text');
 }

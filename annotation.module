@@ -69,6 +69,9 @@ function annotation_is_active($set = NULL) {
   return $active;
 }
 
+/**
+ * Implements hook_theme().
+ */
 function annotation_theme($existing, $type, $theme, $path) {
   return array(
     'annotation_comment' => array(
@@ -186,6 +189,9 @@ function annotation_get_comment_annotation($comment) {
   }
 }
 
+/**
+ * Implements hook_link().
+ */
 function annotation_link($type, $object, $teaser = FALSE) {
   if ($type === 'comment' && annotation_is_active()) {
     if (!is_null(annotation_get_comment_annotation($object))) {
