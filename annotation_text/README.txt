@@ -14,3 +14,4 @@ jquery.wrapSelection.js:
 -- Installation --
 
     For annotations to show up, you must enable the Annotation filter, and set it to run before any other filter.
+    Make sure the <span> element is not filtered out by the Filtered HTML filter.
