@@ -46,7 +46,6 @@ function annotation_text_schema() {
         'string' => array(
           'type' => 'text',
           'not null' => TRUE,
-          'default' => '',
           'description' => t('Selected text: string'),
         ),
       ),
