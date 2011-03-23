@@ -1,11 +1,57 @@
 <?php
 
 /**
+ * @file
+ * Installation file for Annotation Text module.
+ */
+
+/**
  * Implements hook_install().
  */
 function annotation_text_install() {
   drupal_install_schema('annotation_text');
 }
+
+/**
+ * Implements hook_requirements().
+ */
+function annotation_text_requirements($phase) {
+  $requirements = array();
+  $t = get_t();
+
+  $requirements['annotation_textchildren']['title'] = $t('jquery.textchildren.js');
+  if (file_exists(drupal_get_path('module', 'annotation_text') . '/jquery.textchildren.js')) {
+    $requirements['annotation_textchildren']['value'] = $t('jquery.textchildren.js present');
+    $requirements['annotation_textchildren']['severity'] = REQUIREMENT_OK;
+  }
+  else {
+    // Required library wasn't found. Abort installation.
+    $requirements['annotation_textchildren']['value'] = $t('Not found');
+    // Provide a download link.
+    $requirements['annotation_textchildren']['description'] = $t('The jQuery Textchildren plugin is missing. <a href="@download">Download</a> and extract it to your <em>annotation/annotation_text</em> module directory.', array(
+      '@download' => 'http://plugins.learningjquery.com/textchildren/jquery.textchildren.js',
+    ));
+    $requirements['annotation_textchildren']['severity'] = REQUIREMENT_ERROR;
+  }
+
+  $requirements['annotation_wrapselection']['title'] = $t('jquery.wrapSelection.js');
+  if (file_exists(drupal_get_path('module', 'annotation_text') . '/jquery.wrapSelection.js')) {
+    $requirements['annotation_wrapselection']['value'] = $t('jquery.wrapSelection.js present');
+    $requirements['annotation_wrapselection']['severity'] = REQUIREMENT_OK;
+  }
+  else {
+    // Required library wasn't found. Abort installation.
+    $requirements['annotation_wrapselection']['value'] = $t('Not found');
+    // Provide a download link.
+    $requirements['annotation_wrapselection']['description'] = $t('The jQuery wrapSelection plugin is missing. <a href="@download">Download</a> and extract it to your <em>annotation/annotation_text</em> module directory.', array(
+      '@download' => 'http://plugins.jquery.com/project/wrapSelection',
+    ));
+    $requirements['annotation_wrapselection']['severity'] = REQUIREMENT_ERROR;
+  }
+
+  return $requirements;
+}
+
 
 /**
  * Implements hook_schema().
