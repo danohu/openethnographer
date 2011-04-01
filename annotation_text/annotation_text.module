@@ -37,25 +37,79 @@ function annotation_text_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
         break;
 
       case 'load':
-        // TODO: find a better way of passing filter context
-        $node->body = _annotation_text_add_context($node->body, $node);
-        $node->teaser = _annotation_text_add_context($node->teaser, $node);
+        $node->body = annotation_text_add_markup($node->body, $node);
+        $node->teaser = annotation_text_add_markup($node->teaser, $node, TRUE);
+        break;
+      case 'presave':
+        // Handle version changes.
+        if ($node->nid && preg_match_all('@<span class="annotation annotation-cid-(\d+) annotation-text-(\d+)">@i', $node->body, $matches)) {
+          if (count($matches[1])) {
+            foreach ($matches[1] as $key => $cid) {
+              // Get the new offset, length, and string
+              $offset = strpos($node->body, $matches[0][$key]);
+              // TODO: test with line breaks etc. Did this ever work across linebreaks??
+              preg_match('@' . $matches[0][$key] . '(.*?)</span>@i', $node->body, $selections);
+              $string = $selections[1];
+              $replacements[] = array(
+                'string' => $string,
+                'span' => $selections[0],
+              );
+              $length = strlen($string);
+              // Update the text_annotations data.
+              $annotation = array(
+                'cid' => $cid,
+                'offset' => $offset,
+                'length' => $length,
+                'string' => $string,
+              );
+              // We cannot save the revised annotations during presave,
+              // as we do not know the new vid of the node.
+              // Store them in the node to use on update.
+              $node->annotation_text[] = $annotation;
+            }
+            // Remove annotation spans from markup before saving.
+            if (count($replacements)) {
+              foreach ($replacements as $replacement) {
+                $node->body = str_replace($replacement['span'], $replacement['string'], $node->body);
+                $node->teaser = str_replace($replacement['span'], $replacement['string'], $node->teaser);
+              }
+            }
+          }
+        }
+        break;
+      case 'update':
+        // Annotation updates and new revisions are added here now that the
+        // $node->vid is known.
+        $cids = array();
+        if (isset($node->annotation_text) && count($node->annotation_text)) {
+          foreach ($node->annotation_text as $annotation) {
+            // Ensure this is a valid comment with a record for this node.
+            if (db_result(db_query("SELECT cid FROM {comments} WHERE nid = %d AND cid = %d", $node->nid, $annotation['cid']))) {
+              $cids[$annotation['cid']] = 1;
+              $annotation['vid'] = $node->vid;
+              $update = db_result(db_query("SELECT vid FROM {annotation_text} WHERE cid = %d and vid = %d", $annotation['cid'], $node->vid));
+
+              if ($update) {
+                drupal_write_record('annotation_text', $annotation, array('cid', 'vid'));
+              }
+              else {
+                // A new revision is being created, which needs a new record.
+                drupal_write_record('annotation_text', $annotation);
+              }
+            }
+          }
+        }
+        // Remove any old annotations for this vid if they were removed
+        // during edit. (Leave them as regular comments only)
+        $result = db_query("SELECT cid FROM {annotation_text} WHERE vid = %d", $node->vid);
+        while ($cid = db_result($result)) {
+          if (!isset($cids[$cid])) {
+            db_query("DELETE FROM {annotation_text} WHERE cid = %d AND vid = %d", $cid, $node->vid);
+          }
+        }
         break;
     }
   }
-}
-
-/**
- * Helper that adds node context to node body, for later use in filter stage
- */
-function _annotation_text_add_context($text, $node) {
-  // strip previous contexts
-  $text = preg_replace('@<!-- annotation_text-nid:\d+ -->@i', '', $text);
-  
-  // add context
-  $text .= "<!-- annotation_text-nid:". $node->nid ." -->";
-  
-  return $text;
 }
 
 /**
@@ -73,51 +127,12 @@ function annotation_text_comment(&$a1, $op) {
         if (!isset($annotations['c'. $a1['cid']])) {
           drupal_write_record('annotation_text', $a1['annotation_text']);
         }
-
-        cache_clear_all($node->format .':'. md5($node->body), 'cache_filter');
-        cache_clear_all($node->format .':'. md5($node->teaser), 'cache_filter');
       }
       break;
 
     case 'delete':
       db_query('DELETE FROM {annotation_text} WHERE cid = %d', $a1->cid);
       break;
-  }
-}
-
-/**
- * Implements hook_filter().
- */
-function annotation_text_filter($op, $delta = 0, $format = -1, $text = '', $cache_id = 0) {
-  switch ($op) {
-    case 'list':
-      return array(
-        0 => t('Annotation filter'),
-      );
-
-    case 'description':
-      switch ($delta) {
-        case 0:
-          return t('Attaches user annotations to text.');
-
-        default:
-          return;
-      }
-
-    case 'process':
-      switch ($delta) {
-        case 0:
-          return annotation_text_filter_process($text, $format);
-
-        default:
-          return $text;
-      }
-
-    case 'no cache':
-      return TRUE; // TODO: Don't cache for now
-
-    default:
-      return $text;
   }
 }
 
@@ -139,25 +154,24 @@ function annotation_text_annotations($vid) {
   return $annotations[$vid];
 }
 
+
 /**
- * Filter process function that does the heavy lifting
+ * Add the annotations to the text.
  */
-function annotation_text_filter_process($text, $format) {
-  if (preg_match('@<!-- annotation_text-nid:(\d+) -->@i', $text, $matches)) {
-    // our context
-    $nid = $matches[1];
-    $node = node_load($nid);
-    $annotations = array();
-    $corrected_annotations = array();
-    
-    // generate adjustment list
-    $adjustments = _annotation_text_get_offset_adjustments($text);
-    
-    // strip all html tags
-    $clean = _annotation_text_get_clean_text($text, $adjustments);
-    
-    $result = db_query("SELECT * FROM {annotation_text} WHERE vid = %d ORDER BY offset ASC, length ASC", $node->vid);
-    while ($annotation = db_fetch_object($result)) {
+function annotation_text_add_markup($text, $node, $teaser = FALSE) {
+  $annotations = array();
+  $corrected_annotations = array();
+
+  // generate adjustment list
+  $adjustments = _annotation_text_get_offset_adjustments($text);
+
+  // strip all html tags
+  $clean = _annotation_text_get_clean_text($text, $adjustments);
+
+  $result = db_query("SELECT * FROM {annotation_text} WHERE vid = %d ORDER BY offset ASC, length ASC", $node->vid);
+  while ($annotation = db_fetch_object($result)) {
+    // Don't try to match annotations into teasers if their offset is past the teaser length.
+    if (!$teaser || $annotation->offset < strlen($text)) {
       // match it up
       if (($annotation->matched_offset = _annotation_text_closest_match($clean, $annotation->string, $annotation->offset, $annotation->length)) !== FALSE) {
         // correct matched_offset due to html tags
@@ -166,125 +180,125 @@ function annotation_text_filter_process($text, $format) {
         $annotations[] = $annotation;
       }
     }
-    
+  }
+
+  // split up overlapping annotations
+  if (!empty($annotations)) {
+    // initialize offset
+    $offset = 0;
+
     // split up overlapping annotations
-    if (!empty($annotations)) {
-      // initialize offset
-      $offset = 0;
-      
-      // split up overlapping annotations
-      while (1) {
-        $found = FALSE;
-        $corrected_annotation = FALSE;
-                
-        // make sure offset is not in the middle of an html tag
-        // go through adjustments as adjust
-        foreach ($adjustments as $pos => $tag) {
-          if (($pos <= $offset) && ($offset < ($pos + strlen($tag)))) {
-            $offset = $pos + strlen($tag);
-          }
+    while (1) {
+      $found = FALSE;
+      $corrected_annotation = FALSE;
+
+      // make sure offset is not in the middle of an html tag
+      // go through adjustments as adjust
+      foreach ($adjustments as $pos => $tag) {
+        if (($pos <= $offset) && ($offset < ($pos + strlen($tag)))) {
+          $offset = $pos + strlen($tag);
         }
-                
-        // find first annotation that contains this offset
+      }
+
+      // find first annotation that contains this offset
+      foreach ($annotations as $id => $annotation) {
+        if (($annotation->corrected_offset <= $offset) && ($offset < ($annotation->corrected_offset + $annotation->length))) {
+          $corrected_annotation = array(
+            'offset' => $offset,
+            'length' => $annotation->corrected_length - ($offset - $annotation->corrected_offset),
+            'cids' => array($annotation->cid => $annotation->cid),
+          );
+          $found = TRUE;
+          break;
+        }
+      }
+
+      // if not found, find first annotation AFTER offset
+      if (!$found) {
         foreach ($annotations as $id => $annotation) {
-          if (($annotation->corrected_offset <= $offset) && ($offset < ($annotation->corrected_offset + $annotation->length))) {
+          if ($offset < $annotation->corrected_offset) {
+            $offset = $annotation->corrected_offset;
             $corrected_annotation = array(
               'offset' => $offset,
-              'length' => $annotation->corrected_length - ($offset - $annotation->corrected_offset),
+              'length' => $annotation->corrected_length,
               'cids' => array($annotation->cid => $annotation->cid),
             );
             $found = TRUE;
             break;
           }
         }
-        
-        // if not found, find first annotation AFTER offset
-        if (!$found) {
-          foreach ($annotations as $id => $annotation) {
-            if ($offset < $annotation->corrected_offset) {
-              $offset = $annotation->corrected_offset;
-              $corrected_annotation = array(
-                'offset' => $offset,
-                'length' => $annotation->corrected_length,
-                'cids' => array($annotation->cid => $annotation->cid),
-              );
-              $found = TRUE;
-              break;
-            }
-          }
+      }
+
+      // if still not found, then we hit the end
+      if (!$found) {
+        break;
+      }
+
+      // now that we found a valid offset to work with
+      // go through annotations and adjust
+      foreach ($annotations as $id => $annotation) {
+        // collect cids if range overlaps
+        if (($annotation->corrected_offset <= $offset) && (($annotation->corrected_offset + $annotation->length) > $offset)) {
+          $corrected_annotation['cids'][$annotation->cid] = $annotation->cid;
         }
-        
-        // if still not found, then we hit the end
-        if (!$found) {
+
+        // if same offset, but shorter length
+        if (($annotation->corrected_offset == $offset) && ($annotation->length < $corrected_annotation['length'])) {
+          $corrected_annotation['length'] = $annotation->corrected_length;
+        }
+        // else, if higher offset, but less than curent length
+        elseif (($annotation->corrected_offset > $offset) && ($annotation->corrected_offset < ($offset + $corrected_annotation['length']))) {
+          $corrected_annotation['length'] = $annotation->corrected_offset - $offset;
+        }
+        // else, if lower offset, but end is in range
+        elseif (($annotation->corrected_offset < $offset) && (($annotation->corrected_offset + $annotation->length) > $offset) && (($annotation->corrected_offset + $annotation->length) < ($offset + $corrected_annotation['length']))) {
+          $corrected_annotation['length'] = ($annotation->corrected_offset + $annotation->corrected_length) - $offset;
+        }
+      }
+
+      // we don't want annotations breaking existing HTML tags
+      // go through adjustments and shorten length as necessary
+      foreach ($adjustments as $pos => $tag) {
+        if (($offset < $pos) && (($pos + strlen($tag)) <= ($offset + $corrected_annotation['length']))) {
+          $corrected_annotation['length'] = $pos - $offset;
           break;
         }
-        
-        // now that we found a valid offset to work with
-        // go through annotations and adjust
-        foreach ($annotations as $id => $annotation) {
-          // collect cids if range overlaps
-          if (($annotation->corrected_offset <= $offset) && (($annotation->corrected_offset + $annotation->length) > $offset)) {
-            $corrected_annotation['cids'][$annotation->cid] = $annotation->cid;
-          }
-          
-          // if same offset, but shorter length
-          if (($annotation->corrected_offset == $offset) && ($annotation->length < $corrected_annotation['length'])) {
-            $corrected_annotation['length'] = $annotation->corrected_length;
-          }
-          // else, if higher offset, but less than curent length
-          elseif (($annotation->corrected_offset > $offset) && ($annotation->corrected_offset < ($offset + $corrected_annotation['length']))) {
-            $corrected_annotation['length'] = $annotation->corrected_offset - $offset;
-          }
-          // else, if lower offset, but end is in range
-          elseif (($annotation->corrected_offset < $offset) && (($annotation->corrected_offset + $annotation->length) > $offset) && (($annotation->corrected_offset + $annotation->length) < ($offset + $corrected_annotation['length']))) {
-            $corrected_annotation['length'] = ($annotation->corrected_offset + $annotation->corrected_length) - $offset;
-          }
-        }
-        
-        // we don't want annotations breaking existing HTML tags
-        // go through adjustments and shorten length as necessary
-        foreach ($adjustments as $pos => $tag) {
-          if (($offset < $pos) && (($pos + strlen($tag)) <= ($offset + $corrected_annotation['length']))) {
-            $corrected_annotation['length'] = $pos - $offset;
-            break;
-          }
-        }
-        
-        // sanity check - we shouldn't have an invalid length at this time
-        if ($corrected_annotation['length'] <= 0) {
-          break;
-        }
-        
-        // increment offset
-        $offset += $corrected_annotation['length'];
-        
-        $corrected_annotations[] = $corrected_annotation;
       }
-      
-      // Now that annotations are cleaned up, add annotation markup.
-      $currAdjustment = 0;
-      foreach ($corrected_annotations as $corrected_annotation) {
-        // generate classes and anchor for this region
-        $classes = array('annotation');
-        foreach ($corrected_annotation['cids'] as $cid) {
-          $classes[] = 'annotation-cid-'. $cid;
-        }
-        
-        // Add class that specifies number of overlapping annotations.
-        $classes[] = 'annotation-text-'. count($corrected_annotation['cids']);
-        
-        // Generate new string, and replace old string.
-        $string = substr($text, $corrected_annotation['offset'] + $currAdjustment, $corrected_annotation['length']);
-        $newString = '<span class="'. implode(' ', $classes) .'">'. $string .'</span>';
-        $text = substr_replace($text, $newString, $corrected_annotation['offset'] + $currAdjustment, $corrected_annotation['length']);
-        
-        // Adjust on-the-fly adjustment so we continue to insert tags at
-        // the right place.
-        $currAdjustment += strlen($newString) - strlen($string);
+
+      // sanity check - we shouldn't have an invalid length at this time
+      if ($corrected_annotation['length'] <= 0) {
+        break;
       }
+
+      // increment offset
+      $offset += $corrected_annotation['length'];
+
+      $corrected_annotations[] = $corrected_annotation;
+    }
+
+    // Now that annotations are cleaned up, add annotation markup.
+    $currAdjustment = 0;
+    foreach ($corrected_annotations as $corrected_annotation) {
+      // generate classes and anchor for this region
+      $classes = array('annotation');
+      foreach ($corrected_annotation['cids'] as $cid) {
+        $classes[] = 'annotation-cid-'. $cid;
+      }
+
+      // Add class that specifies number of overlapping annotations.
+      $classes[] = 'annotation-text-'. count($corrected_annotation['cids']);
+
+      // Generate new string, and replace old string.
+      $string = substr($text, $corrected_annotation['offset'] + $currAdjustment, $corrected_annotation['length']);
+      $newString = '<span class="'. implode(' ', $classes) .'">'. $string .'</span>';
+      $text = substr_replace($text, $newString, $corrected_annotation['offset'] + $currAdjustment, $corrected_annotation['length']);
+
+      // Adjust on-the-fly adjustment so we continue to insert tags at
+      // the right place.
+      $currAdjustment += strlen($newString) - strlen($string);
     }
   }
-  
+
   return $text;
 }
 
