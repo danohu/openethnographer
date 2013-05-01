@@ -1,6 +1,13 @@
 name = Annotation
-description = Provides a common API for annotation modules
-core = 6.x
-package = "Annotation"
-dependencies[] = jquery_ui
-dependencies[] = beautytips
+description = Annotation entity
+package = Annotation
+core = 7.x
+
+configure = admin/structure/annotation
+
+files[] = annotation.class.inc
+files[] = annotation.controller.inc
+files[] = plugins/annotator/StoreAnnotatorPlugin.class.inc
+
+dependencies[] = ctools
+dependencies[] = entity

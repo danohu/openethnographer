@@ -1,7 +1,0 @@
-name = Image Annotation
-description = Allows users to add annotations to sections of images
-dependencies[] = imagefield
-dependencies[] = jquery_ui
-dependencies[] = annotation
-package = Annotation
-core = 6.x

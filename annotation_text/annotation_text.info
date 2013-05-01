@@ -1,5 +1,0 @@
-name = Text Annotation
-description = Allows people to annotate sections of node text
-core = 6.x
-package = Annotation
-dependencies[] = annotation
