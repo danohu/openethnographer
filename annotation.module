@@ -146,7 +146,7 @@ function annotation_entity_property_info_alter(&$info) {
     'setter callback' => 'entity_property_verbatim_set',
     'setter permission' => 'administer annotations',
     'required' => TRUE,
-    'schema field' => 'user',
+    'schema field' => 'uid',
   );
 }
 
