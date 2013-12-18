@@ -36,28 +36,7 @@ function annotation_permission() {
     ),
   );
 }
-/*
-function annotator_theme($existing, $type, $theme, $path) {
-  $path = drupal_get_path('module', 'annotation');
-  return array(
-    'annotation' => array(
-      'render element' => 'elements',
-      'template' => 'annotation',
-      'path' => $path . '/theme',
-      'variables' => array(
-        'id' => NULL, 
-        'created' => Null,
-        'updated' => Null,
-        'text' => Null,
-        'quote' => Null,
-        'uri' => Null,
-        'user' => Null,
-        'uid' => Null,
-      ),
-    ),
-  );
-}
-*/
+
 
 /**
  * Implements hook_entity_info().
