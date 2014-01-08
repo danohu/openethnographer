@@ -277,13 +277,13 @@ function annotation_access($op, $entity, $account = NULL, $entity_type = NULL) {
           || user_access('view annotations', $account)
           || ($entity->uid == $account->uid);
     case 'edit':
-      return user_access('administer annotations')
-          || user_access('edit any annotations')
-          || (user_access('edit own annotations') && ($entity->uid == $account->uid));
+      return user_access('administer annotations', $account)
+          || user_access('edit any annotations', $account)
+          || (user_access('edit own annotations', $account) && ($entity->uid == $account->uid));
     case 'delete':
-      return user_access('administer annotations')
-          || user_access('edit any annotations')
-          || (user_access('edit own annotations') && ($entity->uid == $account->uid));
+      return user_access('administer annotations', $account)
+          || user_access('edit any annotations', $account)
+          || (user_access('edit own annotations', $account) && ($entity->uid == $account->uid));
   }
 }
 
