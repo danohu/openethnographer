@@ -85,7 +85,6 @@ function annotation_entity_info() {
         ),
       ),
       'module' => 'annotation',
-      'access callback' => 'annotation_access',
       'static cache' => TRUE,
     ),
   );
@@ -208,7 +207,7 @@ function annotation_menu() {
     'page callback' => 'annotation_view_page',
     'page arguments' => array(1, 'annoation'),
     'access callback' => 'annotation_access',
-    'access arguments' => array('view', 'annotation', 1),
+    'access arguments' => array('view', 1),
     'file' => 'annotation.pages.inc',
   );
   $items['annotation/%entity_object/delete'] = array(
