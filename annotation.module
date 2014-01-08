@@ -264,7 +264,7 @@ function annotation_access($op, $entity, $account = NULL, $entity_type = NULL) {
   if (!isset($account)) {
     $account = $user;
   }
-  if ($user->uid == 1) {
+  if ($account->uid == 1) {
     return TRUE;
   }
 
