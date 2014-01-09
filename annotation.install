@@ -79,7 +79,10 @@ function annotation_schema() {
       'annotation_type' => array(array('type', 4)),
     ),
     'foreign keys' => array(
-      'uid' => array('users' => 'uid'),
+      'uid' => array(
+        'table' => 'users',
+        'columns' => array('uid' => 'uid'),
+      ),
     ),
     'primary key' => array('id'),
   );
