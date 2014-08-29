@@ -1,4 +1,4 @@
-<nno?php
+<?php
 /**
  * Implements hook_permission().
  */
