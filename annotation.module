@@ -1,4 +1,4 @@
-<?php
+<nno?php
 /**
  * Implements hook_permission().
  */
@@ -205,7 +205,7 @@ function annotation_menu() {
     'title callback' => 'entity_label',
     'title arguments' => array('annotation', 1),
     'page callback' => 'annotation_view_page',
-    'page arguments' => array(1, 'annoation'),
+    'page arguments' => array(1, 'annotation'),
     'access callback' => 'annotation_access',
     'access arguments' => array('view', 1),
     'file' => 'annotation.pages.inc',

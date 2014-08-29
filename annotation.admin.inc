@@ -65,7 +65,7 @@ function annotation_admin_content($form, $form_state) {
     '#type' => 'submit',
     '#value' => t('Update'),
     '#validate' => array('annotation_admin_validate'),
-    '#submit' => array('annoation_admin_submit'),
+    '#submit' => array('annotation_admin_submit'),
   );
 
   // Build the sortable table header.
