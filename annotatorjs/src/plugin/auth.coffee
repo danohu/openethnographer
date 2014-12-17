@@ -1,7 +1,3 @@
-Annotator = require('annotator-plugintools').Annotator
-$ = Annotator.Util.$
-
-
 # Public: Creates a Date object from an ISO8601 formatted date String.
 #
 # string - ISO8601 formatted date String.
@@ -28,11 +24,7 @@ createDateFromISO8601 = (string) ->
 
   if d[14]
     offset = (Number(d[16]) * 60) + Number(d[17])
-    if d[15] == '-'
-      factor = 1
-    else
-      factor = -1
-    offset *= factor
+    offset *= ((d[15] == '-') ? 1 : -1)
 
   offset -= date.getTimezoneOffset()
   time = (Number(date) + (offset * 60 * 1000))
@@ -45,8 +37,8 @@ base64Decode = (data) ->
     # Gecko and Webkit provide native code for this
     atob(data)
   else
-    # Adapted from MIT/BSD licensed code at
-    # http://phpjs.org/functions/base64_decode version 1109.2015
+    # Adapted from MIT/BSD licensed code at http://phpjs.org/functions/base64_decode
+    # version 1109.2015
     b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
     i = 0
     ac = 0
@@ -60,14 +52,10 @@ base64Decode = (data) ->
 
     while i < data.length
       # unpack four hexets into three octets using index points in b64
-      h1 = b64.indexOf(data.charAt(i))
-      i += 1
-      h2 = b64.indexOf(data.charAt(i))
-      i += 1
-      h3 = b64.indexOf(data.charAt(i))
-      i += 1
-      h4 = b64.indexOf(data.charAt(i))
-      i += 1
+      h1 = b64.indexOf(data.charAt(i++))
+      h2 = b64.indexOf(data.charAt(i++))
+      h3 = b64.indexOf(data.charAt(i++))
+      h4 = b64.indexOf(data.charAt(i++))
 
       bits = h1 << 18 | h2 << 12 | h3 << 6 | h4
 
@@ -76,14 +64,11 @@ base64Decode = (data) ->
       o3 = bits & 0xff
 
       if h3 == 64
-        tmp_arr[ac] = String.fromCharCode(o1)
-        ac += 1
+        tmp_arr[ac++] = String.fromCharCode(o1)
       else if h4 == 64
-        tmp_arr[ac] = String.fromCharCode(o1, o2)
-        ac += 1
+        tmp_arr[ac++] = String.fromCharCode(o1, o2)
       else
-        tmp_arr[ac] = String.fromCharCode(o1, o2, o3)
-        ac += 1
+        tmp_arr[ac++] = String.fromCharCode(o1, o2, o3)
 
     tmp_arr.join('')
 
@@ -101,7 +86,7 @@ parseToken = (token) ->
   JSON.parse(base64UrlDecode(payload))
 
 # Public: Supports the Store plugin by providing Authentication headers.
-class Auth
+class Annotator.Plugin.Auth extends Annotator.Plugin
   # User options that can be provided.
   options:
 
@@ -127,15 +112,12 @@ class Auth
   #   })
   #
   # Returns instance of Auth.
-  constructor: (options) ->
-    @options = $.extend(true, {}, @options, options)
+  constructor: (element, options) ->
+    super
+
     # List of functions to be executed when we have a valid token.
     @waitingForToken = []
 
-  # Public: Initialises the plugin.
-  #
-  # Returns nothing.
-  pluginInit: ->
     if @options.token
       this.setToken(@options.token)
     else
@@ -155,28 +137,24 @@ class Auth
       url: @options.tokenUrl
       dataType: 'text'
       xhrFields:
-        withCredentials: true # Send any auth cookies to the backend
+        withCredentials: true # Send any auth cookies to the backend
 
     # on success, set the auth token
     .done (data, status, xhr) =>
       this.setToken(data)
 
-    # on failure, relay any message given by the server to the user with a
-    # notification
-    .fail (xhr, status, err) ->
+    # on failure, relay any message given by the server to the user with a notification
+    .fail (xhr, status, err) =>
       msg = Annotator._t("Couldn't get auth token:")
       console.error "#{msg} #{err}", xhr
-      Annotator.showNotification(
-        "#{msg} #{xhr.responseText}",
-        Annotator.Notification.ERROR
-      )
+      Annotator.showNotification("#{msg} #{xhr.responseText}", Annotator.Notification.ERROR)
 
     # always reset the requestInProgress indicator
     .always =>
       @requestInProgress = false
 
   # Public: Sets the @token and checks it's validity. If the token is invalid
-  # requests a new one from the server.
+  # requests a new one from the server.
   #
   # token - A token string.
   #
@@ -193,10 +171,7 @@ class Auth
     if this.haveValidToken()
       if @options.autoFetch
         # Set timeout to fetch new token 2 seconds before current token expiry
-        @refreshTimeout = setTimeout(
-          (=> this.requestToken()),
-          (this.timeToExpiry() - 2) * 1000
-        )
+        @refreshTimeout = setTimeout (() => this.requestToken()), (this.timeToExpiry() - 2) * 1000
 
       # Set headers field on this.element
       this.updateHeaders()
@@ -209,7 +184,7 @@ class Auth
       console.warn Annotator._t("Didn't get a valid token.")
       if @options.autoFetch
         console.warn Annotator._t("Getting a new token in 10s.")
-        setTimeout((=> this.requestToken()), 10 * 1000)
+        setTimeout (() => this.requestToken()), 10 * 1000
 
   # Public: Checks the validity of the current token. Note that this *does
   # not* check the authenticity of the token.
@@ -219,7 +194,7 @@ class Auth
   #   auth.haveValidToken() # => Returns true if valid.
   #
   # Returns true if the token is valid.
-  haveValidToken: ->
+  haveValidToken: () ->
     allFields = (
       @_unsafeToken and
       @_unsafeToken.issuedAt and
@@ -244,12 +219,16 @@ class Auth
 
     if (timeToExpiry > 0) then timeToExpiry else 0
 
-  # Public: Updates the headers to be sent with the Store requests.
+  # Public: Updates the headers to be sent with the Store requests. This is
+  # achieved by updating the 'annotator:headers' key in the @element.data()
+  # store.
   #
   # Returns nothing.
   updateHeaders: ->
-    if this.annotator.store?.setHeader?
-      this.annotator.store.setHeader('x-annotator-auth-token', @token)
+    current = @element.data('annotator:headers')
+    @element.data('annotator:headers', $.extend(current, {
+      'x-annotator-auth-token': @token,
+    }))
 
   # Runs the provided callback if a valid token is available. Otherwise requests
   # a token until it recieves a valid one.
@@ -272,7 +251,3 @@ class Auth
       this.waitingForToken.push(callback)
       if not @requestInProgress
         this.requestToken()
-
-Annotator.Plugin.Auth = Auth
-
-module.exports = Auth

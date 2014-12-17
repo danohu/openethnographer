@@ -30,11 +30,11 @@
 }
 
 .annotator-resize,
-.annotator-widget:after,
-.annotator-editor a:after,
+.annotator-widget::after,
+.annotator-editor a::after,
 .annotator-viewer .annotator-controls button,
 .annotator-viewer .annotator-controls a,
-.annotator-filter .annotator-filter-navigation button:after,
+.annotator-filter .annotator-filter-navigation button::after,
 .annotator-filter .annotator-filter-property .annotator-filter-clear {
 	background-image: url(../img/annotator-glyph-sprite.png);
 	background-repeat: no-repeat;
@@ -44,15 +44,11 @@
 -------------------------------------------------------------------- */
 
 .annotator-hl {
-	background: #FFFF0A;
 	background: rgba(255, 255, 10, 0.3);
-	-ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#4DFFFF0A, endColorstr=#4DFFFF0A)";  /* 0.3 == 4D in MS filters */
 }
 
 .annotator-hl-temporary {
-	background: #007CFF;
 	background: rgba(0, 124, 255, 0.3);
-	-ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#4D007CFF, endColorstr=#4D007CFF)";  /* 0.3 == 4D in MS filters */
 }
 
 /* Annotator Wrapper
@@ -134,9 +130,7 @@
 	bottom: 15px;
 	left: -18px;
 	min-width: 265px;
-	background-color: #FBFBFB;
 	background-color: rgba(251, 251, 251, 0.98);
-	border: 1px solid #7A7A7A;
 	border: 1px solid rgba(122, 122, 122, 0.6);
 	-webkit-border-radius: 5px;
 	-moz-border-radius: 5px;
@@ -168,7 +162,7 @@
 	list-style: none;
 }
 
-.annotator-widget:after {
+.annotator-widget::after {
 	content: "";
 	display: block;
 	width: 18px;
@@ -179,12 +173,12 @@
 	left: 8px;
 }
 
-.annotator-invert-x .annotator-widget:after {
+.annotator-invert-x .annotator-widget::after {
 	left: auto;
 	right: 8px;
 }
 
-.annotator-invert-y .annotator-widget:after {
+.annotator-invert-y .annotator-widget::after {
 	background-position: 0 -15px;
 	bottom: auto;
 	top: -9px;
@@ -198,7 +192,6 @@
 }
 
 .annotator-viewer .annotator-item {
-	border-top: 2px solid #7A7A7A;
 	border-top: 2px solid rgba(122, 122, 122, 0.2);
 }
 
@@ -208,7 +201,6 @@
 
 .annotator-editor .annotator-item,
 .annotator-viewer div {
-	border-top: 1px solid #858585;
 	border-top: 1px solid rgba(133, 133, 133, 0.11);
 }
 
@@ -501,7 +493,7 @@
 	border-radius: 5px;
 }
 
-.annotator-editor a:after {
+.annotator-editor a::after {
 	position: absolute;
 	top: 50%;
 	left: 5px;
@@ -553,8 +545,8 @@
 	text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.42);
 }
 
-.annotator-editor a:hover:after,
-.annotator-editor a:focus:after {
+.annotator-editor a:hover::after,
+.annotator-editor a:focus::after {
 	margin-top: -8px;
 	background-position: 0 -105px;
 }
@@ -593,18 +585,18 @@
 	);
 }
 
-.annotator-editor a.annotator-save:after {
+.annotator-editor a.annotator-save::after {
 	background-position: 0 -120px;
 }
 
-.annotator-editor a.annotator-save:hover:after,
-.annotator-editor a.annotator-save:focus:after,
-.annotator-editor a.annotator-save.annotator-focus:after {
+.annotator-editor a.annotator-save:hover::after,
+.annotator-editor a.annotator-save:focus::after,
+.annotator-editor a.annotator-save.annotator-focus::after {
 	margin-top: -8px;
 	background-position: 0 -135px;
 }
 
-.annotator-editor .annotator-widget:after {
+.annotator-editor .annotator-widget::after {
 	background-position: 0 -30px;
 }
 
@@ -612,7 +604,7 @@
 	background-color: #f2f2f2;
 }
 
-.annotator-editor.annotator-invert-y .annotator-widget:after {
+.annotator-editor.annotator-invert-y .annotator-widget::after {
 	background-position: 0 -45px;
 	height: 11px;
 }
@@ -853,7 +845,7 @@
 	color: transparent;
 }
 
-.annotator-filter .annotator-filter-navigation button:after {
+.annotator-filter .annotator-filter-navigation button::after {
 	position: absolute;
 	top: 8px;
 	left: 8px;
@@ -864,7 +856,7 @@
 	background-position: 0 -210px;
 }
 
-.annotator-filter .annotator-filter-navigation button:hover:after {
+.annotator-filter .annotator-filter-navigation button:hover::after {
 	background-position: 0 -225px;
 }
 
@@ -876,20 +868,18 @@
 	border-left: none;
 }
 
-.annotator-filter .annotator-filter-navigation .annotator-filter-next:after {
+.annotator-filter .annotator-filter-navigation .annotator-filter-next::after {
 	left: auto;
 	right: 7px;
 	background-position: 0 -240px;
 }
 
-.annotator-filter .annotator-filter-navigation .annotator-filter-next:hover:after {
+.annotator-filter .annotator-filter-navigation .annotator-filter-next:hover::after {
 	background-position: 0 -255px;
 }
 
 .annotator-hl-active {
-	background: #FFFF0A;
 	background: rgba(255, 255, 10, 0.8);
-	-ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#CCFFFF0A, endColorstr=#CCFFFF0A)";  /* 0.8 == CC in MS filters */
 }
 
 .annotator-hl-filtered {

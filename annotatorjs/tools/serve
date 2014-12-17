@@ -1,18 +1,15 @@
 #!/usr/bin/env node
-var path = require('path');
-
-var browserify = require('browserify-middleware');
 var connect = require('connect');
 var jwt = require('jwt-simple');
-var glob = require('glob');
+var iso8601 = require('iso8601');
+
 
 var CONSUMER_KEY = 'mockconsumer';
 var CONSUMER_SECRET = 'mockconsumersecret';
 var CONSUMER_TTL = 1800;
 
-var app = module.exports = connect();
+var app = connect()
 
-// Token
 app.use('/api/token', function(request, response) {
   var payload = {
     'consumerKey': CONSUMER_KEY,
@@ -35,24 +32,10 @@ app.use('/api/token', function(request, response) {
   response.end(tok);
 });
 
-app.use('/lib/annotator.js', browserify(
-    [{'./src/annotator.js': {expose: 'annotator'}}]
-));
-
-glob.sync('./src/plugin/*.js').forEach(function (p) {
-    var loc = '/lib/' + path.relative('./src/', p);
-    app.use(loc, browserify(p, {
-        external: 'annotator'
-    }));
-});
-
-// Static files
 app.use(connect.static(process.cwd()));
 
+app.listen(4000);
 
-// Go
-if (require.main === module) {
-  var port = process.env.PORT || 4000;
-  app.listen(port);
-  console.log("Development: http://localhost:" + port + "/dev.html");
-}
+console.log("The development server is now running.");
+console.log("Live at: http://localhost:4000/dev.html");
+console.log("Test suite at: http://localhost:4000/test/runner.html");

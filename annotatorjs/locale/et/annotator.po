@@ -3,26 +3,26 @@
 # This file is distributed under the same license as the PACKAGE package.
 # 
 # Translators:
-# Rivo Zängov <eraser@eraser.ee>, 2012.
+# Rivo Zängov <eraser@eraser.ee>, 2012
 msgid ""
 msgstr ""
 "Project-Id-Version: Annotator\n"
-"Report-Msgid-Bugs-To: https://github.com/okfn/annotator/issues\n"
+"Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2012-03-16 12:27+0000\n"
-"PO-Revision-Date: 2012-03-17 21:53+0000\n"
+"PO-Revision-Date: 2013-11-20 09:40+0000\n"
 "Last-Translator: Rivo Zängov <eraser@eraser.ee>\n"
-"Language-Team: Estonian (http://www.transifex.net/projects/p/annotator/language/et/)\n"
+"Language-Team: Estonian (http://www.transifex.com/projects/p/annotator/language/et/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: et\n"
-"Plural-Forms: nplurals=2; plural=(n != 1)\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: lib/util.js:23
+#: lib/extensions.js:23
 msgid "Annotator requires jQuery: have you included lib/vendor/jquery.js?"
 msgstr ""
 
-#: lib/util.js:27
+#: lib/extensions.js:27
 msgid ""
 "Annotator requires a JSON implementation: have you included "
 "lib/vendor/json2.js?"
@@ -70,7 +70,7 @@ msgstr ""
 
 #: lib/annotator.js:296
 msgid "Could not load "
-msgstr ""
+msgstr "Ei suutnud laadida "
 
 #: lib/annotator.js:296
 msgid " plugin. Have you included the appropriate <script> tag?"
@@ -146,7 +146,7 @@ msgstr "API päring ebaõnnestus:"
 
 #: lib/plugin/filter.js:27
 msgid "Navigate:"
-msgstr ""
+msgstr "Navigeeri:"
 
 #: lib/plugin/filter.js:27
 msgid "Previous"
@@ -170,7 +170,7 @@ msgstr ""
 
 #: lib/plugin/filter.js:118
 msgid "Filter by "
-msgstr ""
+msgstr "Filtreeri  "
 
 #: lib/plugin/markdown.js:18
 msgid ""
