@@ -166,6 +166,7 @@ function annotation_api_search() {
   $text    = isset($_GET['text'])    ? $_GET['text']       : NULL;
   $quote   = isset($_GET['quote'])   ? $_GET['quote']      : NULL;
   $uri     = isset($_GET['uri'])     ? $_GET['uri']        : NULL;
+  $nid     = isset($_GET['nid'])     ? $_GET['nid']        : NULL;
   $tags    = isset($_GET['tags'])    ? explode(',', $tags) : NULL;
 
   // Initiate query
@@ -194,6 +195,9 @@ function annotation_api_search() {
   }
   if ($uri) {
     $query->propertyCondition('uri', $uri);
+  }
+  if ($nid) {
+    $query->propertyCondition('nid', $nid);
   }
   if (is_array($tags)) {
     foreach($tags as $tag) {
