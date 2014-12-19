@@ -33,7 +33,7 @@ Annotator.Plugin.DrupalNode = (function(_super) {
   })(Annotator.Plugin);
 
 (function ($) {
-  Drupal.behaviors.annotatorTags = {
+  Drupal.behaviors.annotatorDrupalNode = {
     attach: function (context, settings) {
       Drupal.Annotator.annotator('addPlugin', 'DrupalNode');
     }
