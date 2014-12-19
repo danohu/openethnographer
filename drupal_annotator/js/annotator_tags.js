@@ -5,3 +5,7 @@
     }
   };
 })(jQuery);
+
+jQuery(document).ready(function(){
+  jQuery('#annotator-field-2').autocomplete({source: Drupal.settings.autocomplete_terms});
+    });
