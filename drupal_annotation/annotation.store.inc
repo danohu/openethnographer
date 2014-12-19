@@ -199,11 +199,6 @@ function annotation_api_search() {
   if ($nid) {
     $query->propertyCondition('nid', $nid);
   }
-  if (is_array($tags)) {
-    foreach($tags as $tag) {
-      $query->propertyCondition('tags', '"' . $tag . '"', 'LIKE');
-    }
-  }
 
   // Get the total
   $count_query = clone $query;
@@ -250,6 +245,27 @@ function annotation_api_from_stdin() {
   return $entity;
 }
 
+function get_tag($tagarr, $should_create){
+    if(!$tagarr) return NULL;
+    $tagtext = $tagarr[0];    
+    $vocabulary_name = 'openethnographer';
+    $tags = taxonomy_get_term_by_name($tagtext, $vocabulary_name);
+    if($tags){
+        return $tags[0] ;
+    }
+    if($should_create){
+        $tag = new stdClass();
+        $tag->name = $tagtext;
+        $vocabulary = taxonomy_vocabulary_machine_name_load($vocabulary_name);
+        $tag->vid = $vocabulary->vid;
+        taxonomy_term_save($tag);
+        return $tag;
+    }
+    else{
+        return NULL;
+    }
+}
+
 /**
  * Prepare entity for api usage
  */
@@ -262,6 +278,8 @@ function annotation_api_entity_prepare($entity, $op) {
         'name' => format_username($account),
         'roles' => array_values($account->roles),
       );
+      $tag = taxonomy_term_load($entity->tid);
+      if($tag) $entity->tags = array($tag->name);
       unset($entity->uid);
 
       $entity->links[] = array(
@@ -272,6 +290,9 @@ function annotation_api_entity_prepare($entity, $op) {
       break;
     case 'create':
       $entity->uid = $entity->user;
+      $tag = get_tag($entity->tags, TRUE);
+      $entity->tid = is_null($tag) ? NULL : $tag->tid;
+      unset($entity->tag);
       unset($entity->user);
       break;
     case 'update':

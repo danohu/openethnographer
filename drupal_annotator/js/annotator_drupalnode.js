@@ -20,6 +20,7 @@ Annotator.Plugin.DrupalNode = (function(_super) {
             annotation.nid = nid;
 	    });
 
+
     };
     return DrupalNode;
 
