@@ -185,9 +185,8 @@ function annotation_api_search() {
   $query = new EntityFieldQuery();
   $query->entityCondition('entity_type', 'annotation'); // Not related to the annotaton.entity_type field name, but to the Drupal concept.
 
-  // Add conditions to query from the allowed and sanitized values determined above.
-  // TODO Check if the use of LIKE below is correct: do we need it for all text columns?
-  if ($uid) {
+  if (isset($uid) && $uid) {
+    // Use uid instead of user
     $query->propertyCondition('uid', $uid);
   }
   if ($id) {
