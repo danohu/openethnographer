@@ -18,6 +18,10 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
+$ = jQuery;
+
+
+
 (function() {
   var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
@@ -63,6 +67,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       this.onSavePanel = __bind(this.onSavePanel,this);
 
       AnnotatorViewer.__super__.constructor.apply(this, arguments);
+	$ = jQuery;
+	$.i18n.load(i18n_dict);
 
       $( "body" ).append( this.createAnnotationPanel() );
 

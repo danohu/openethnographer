@@ -5,6 +5,6 @@ $plugin = array(
   'label' => t('Sidebar'),
   'module' => 'annotator',
   'handler' => array(
-    'class' => 'TagsAnnotatorPlugin',
+    'class' => 'SidebarAnnotatorPlugin',
   ),
 );
