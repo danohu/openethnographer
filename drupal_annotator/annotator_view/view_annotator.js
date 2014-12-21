@@ -18,15 +18,20 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
+$ = jQuery;
+
+
+
 (function() {
   var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   //constants
-  var IMAGE_DELETE =  '../src/img/icono_eliminar.png',
-  IMAGE_DELETE_OVER = '../src/img/papelera_over.png',
-  SHARED_ICON = '../src/img/shared-icon.png';
+  var IMAGE_PATH = '/sites/all/modules/annotator/annotator_view/img';
+  var IMAGE_DELETE =  IMAGE_PATH + '/icono_eliminar.png',
+  IMAGE_DELETE_OVER = IMAGE_PATH + '/papelera_over.png',
+  SHARED_ICON = IMAGE_PATH + '/shared-icon.png'; 
 
   Annotator.Plugin.AnnotatorViewer = (function(_super) {
     __extends(AnnotatorViewer, _super);
@@ -63,6 +68,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
       this.onSavePanel = __bind(this.onSavePanel,this);
 
       AnnotatorViewer.__super__.constructor.apply(this, arguments);
+	$ = jQuery;
+	i18n_dict = {}
+	$.i18n.load(i18n_dict);
 
       $( "body" ).append( this.createAnnotationPanel() );
 

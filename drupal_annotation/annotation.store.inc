@@ -179,7 +179,7 @@ function annotation_api_search() {
   if ($id) {
     $query->propertyCondition('uri', $id);
   }
-  if ($uid) {
+  if (isset($uid) && $uid) {
     // Use uid instead of user
     $query->propertyCondition('uid', $uid);
   }

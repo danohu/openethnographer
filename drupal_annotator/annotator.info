@@ -14,6 +14,7 @@ files[] = plugins/annotator/PermissionsAnnotatorPlugin.class.inc
 files[] = plugins/annotator/TagsAnnotatorPlugin.class.inc
 files[] = plugins/annotator/UnsupportedAnnotatorPlugin.class.inc
 files[] = plugins/annotator/DrupalNodeAnnotatorPlugin.class.inc
+files[] = plugins/annotator/SidebarAnnotatorPlugin.class.inc
 
 ; Do NOT add annotator plugins' stylesheets and scripts here. It would put them 
 ; always on every page, even if the plugin is not activated. Instead, these 
