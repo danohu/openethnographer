@@ -58,27 +58,35 @@ $ = jQuery;
 
 
     function AnnotatorViewer(element, options) {
-      this.onAnnotationCreated = __bind(this.onAnnotationCreated, this);
-      this.onAnnotationUpdated = __bind(this.onAnnotationUpdated, this);
-      this.onDeleteClick = __bind(this.onDeleteClick, this);
-      this.onEditClick = __bind(this.onEditClick, this);
-      this.onDeleteMouseover = __bind(this.onDeleteMouseover, this);
-      this.onDeleteMouseout = __bind(this.onDeleteMouseout, this);
-      this.onCancelPanel = __bind(this.onCancelPanel,this);
-      this.onSavePanel = __bind(this.onSavePanel,this);
+	if($('.annotations-list-uoc').length == 0){
+	  this.onAnnotationCreated = __bind(this.onAnnotationCreated, this);
+	  this.onAnnotationUpdated = __bind(this.onAnnotationUpdated, this);
+	  this.onDeleteClick = __bind(this.onDeleteClick, this);
+	  this.onEditClick = __bind(this.onEditClick, this);
+	  this.onDeleteMouseover = __bind(this.onDeleteMouseover, this);
+	  this.onDeleteMouseout = __bind(this.onDeleteMouseout, this);
+	  this.onCancelPanel = __bind(this.onCancelPanel,this);
+	  this.onSavePanel = __bind(this.onSavePanel,this);
 
-      AnnotatorViewer.__super__.constructor.apply(this, arguments);
-	$ = jQuery;
-	i18n_dict = {}
-	$.i18n.load(i18n_dict);
+	  AnnotatorViewer.__super__.constructor.apply(this, arguments);
+	    $ = jQuery;
+	    i18n_dict = {
+		'Delete': 'Delete',
+		'confirm_delete': 'Really delete?',
+		'share': 'Share',
+		'view_annotations': 'View Annotations',
+		'anotacio_lost': 'Annotation lost',
+		'pdf_resum': '', //XXX WTF?
+	    }
+	    $.i18n.load(i18n_dict);
 
-      $( "body" ).append( this.createAnnotationPanel() );
+	  $( "body" ).append( this.createAnnotationPanel() );
 
-      $(".container-anotacions").toggle();
-      $("#annotations-panel").click(function(event) {
-        $(".container-anotacions").toggle("slide");       
-      });
-     
+	  $(".container-anotacions").toggle();
+	  $("#annotations-panel").click(function(event) {
+	    $(".container-anotacions").toggle("slide");       
+	  });
+	 }
 
     };
 
@@ -224,7 +232,8 @@ $ = jQuery;
 
     AnnotatorViewer.prototype.onAnnotationsLoaded = function(annotations) {
       var annotation;
-      $('#count-anotations').text( $(".container-anotacions").find('.annotator-marginviewer-element').length );
+      $('#count-anotations').text(annotations.length);
+
       if (annotations.length > 0) {
         for(i=0, len = annotations.length; i < len; i++) {
           annotation = annotations[i];
@@ -249,9 +258,9 @@ $ = jQuery;
 
       var shared_annotation = "";      
       var class_label = "label";
-      var delete_icon = "<img src=\""+IMAGE_DELETE+"\" class=\"annotator-viewer-delete\" title=\""+ i18n_dict.Delete +"\" style=\" float:right;margin-top:3px;;margin-left:3px\"/><img src=\"../src/img/edit-icon.png\"   class=\"annotator-viewer-edit\" title=\"Edit\" style=\"float:right;margin-top:3px\"/>";
+      var delete_icon = "<img src=\""+IMAGE_DELETE+"\" class=\"annotator-viewer-delete\" title=\""+ i18n_dict.Delete +"\" style=\" float:right;margin-top:3px;;margin-left:3px\"/><img src=\"" + IMAGE_PATH + "/edit-icon.png\"   class=\"annotator-viewer-edit\" title=\"Edit\" style=\"float:right;margin-top:3px\"/>";
       
-      if (annotation.estat==1 || annotation.permissions.read.length===0 ) {
+      if (annotation.estat==1 ||true || annotation.permissions.read.length===0 ) {
         shared_annotation = "<img src=\""+SHARED_ICON+"\" title=\""+ i18n_dict.share +"\" style=\"margin-left:5px\"/>"
       }
 
@@ -268,7 +277,7 @@ $ = jQuery;
       }
       var textAnnotation = this.removeTags('iframe',annotation.text);
       var annotation_layer =  '<div class="annotator-marginviewer-text"><div class="'+anotation_color+' anotator_color_box"></div>';
-      annotation_layer += '<div class="anotador_text">'+  textAnnotation  + '</div></div><div class="annotator-marginviewer-date">'+ $.format.date(annotation.data_creacio, "dd/MM/yyyy HH:mm:ss") + '</div><div class="annotator-marginviewer-quote">'+ annotation.quote + '</div><div class="annotator-marginviewer-footer"><span class="'+class_label+'">' + annotation.user + '</span>'+shared_annotation+delete_icon+'</div>';
+      annotation_layer += '<div class="anotador_text">'+  textAnnotation  + '</div></div><div class="annotator-marginviewer-date">'+ $.format.date(annotation.data_creacio, "dd/MM/yyyy HH:mm:ss") + '</div><div class="annotator-marginviewer-quote">'+ annotation.quote + '</div><div class="annotator-marginviewer-footer"><span class="'+class_label+'">' + annotation.user.name + '</span>'+shared_annotation+delete_icon+'</div>';
       
 
 
@@ -300,7 +309,7 @@ $ = jQuery;
         anotation_reference = "annotation-"+annotation.id;
       }
 
-      if (annotation.estat==1 || annotation.permissions.read.length===0 ) {
+      if (annotation.estat==1 || true || annotation.permissions.read.length===0 ) {
         data_type = "shared";
        
       }
