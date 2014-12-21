@@ -253,6 +253,15 @@ function annotation_menu() {
     'type' => MENU_CALLBACK,
     'file' => 'annotation.store.inc',
   );
+
+  $items['annotation/export/%'] = array(
+    'title' => 'Export annotations in CATMA format',
+    'page callback' => 'annotation_export_catma',
+    'page arguments' => array(2),
+    'access arguments' => array('access simple page'),
+  );
+
+
   return $items;
 }
 
@@ -367,4 +376,98 @@ function annotation_ctools_plugin_type() {
       'cache' => FALSE,
     ),
   );
+}
+
+
+
+function id_for_annotation($annotation){
+    /* CATMA needs a unique ID for each annotation
+     their format is CATMA_31faf252-926d-4d2a-b612-f581dd8362dd
+     but we should be OK with OPENETHNOGRAPHER_ANN_id
+     we add _ANN because CATMA seems to use the same namespace for 
+     Broken out so we can change this if we ever implement
+     pseudorandom annotation identifiers
+    */
+    return "#OPENETHNOGRAPHER_ANN_" . $annotation['id'];
+}
+
+function annotations_for_node($nid){
+    $nodeurl = $GLOBALS['base_url'] . url("node/$nid");
+    $anns = db_query("select id, type, language, created, updated, text, quote, ranges, uid, nid from {annotation} where uri = :uri", array(':uri' => $nodeurl));
+    return($anns);
+}
+
+function generate_filename($node){
+    return "openethnographer_" . $node->nid . ".txt";
+}
+
+function range_statement($annot, $node){
+    // XXX this may need reorg to cope with >1 range per row
+    // for now, we just take the first range
+    // also, we ignore the xpath component of it all
+    $range = unserialize($annot["ranges"])[0];
+    return "( /.{$range['startOffset']}, /.{$range['endOffset']})";
+}
+
+function annotation_export_catma($nid){ 
+    watchdog('annotation', 'starting');
+
+    $output_format = isset($_GET['format']) ? $_GET['format'] : 'xml';
+    $output_format = strtolower($output_format);
+    // XXX needs protection against bogus values
+
+    $node = node_load($nid);
+    if($node === FALSE) drupal_not_found();
+    // XXX add permissions checks here
+
+    $tei = new SimpleXMLElement( <<<XMLTEXT
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:lang="en" xmlns="http://www.tei-c.org/ns/1.0"></TEI>
+XMLTEXT
+    );
+    $header = $tei->addChild('teiHeader');
+    $fileDesc = $header->addChild('fileDesc');
+    $fileDesc->addChild('title', $node->title);
+    $fileDesc->addChild('author', $node->name);
+    $lang = $header->addChild('profileDesc')->addChild('langUsage')->addChild('language', 'english');
+    $lang->addAttribute('ident', 'en');    
+
+    $ann_body = $tei->addChild('body')->addChild('ab');
+
+    $filename_content = generate_filename($node);
+    $filename_structure = basename($filename_content, '.txt') . '_structure.xml';
+    $filename_zip = basename($filename_content, '.txt') . '.zip';
+
+    // get all ecomma ranges for the commons
+    $annotations = annotations_for_node($nid);
+    if($annotations){
+        while ($annot = $annotations->fetchAssoc()){
+            $seg = $ann_body->addChild('seg');
+            // XXX not clear quite what is the structure of these annotation IDs
+            $seg->addAttribute("ana", id_for_annotation($annot));
+            $ptr = $seg->addChild("ptr");
+            $ptr->addAttribute("type", "inclusion");
+            $ptr->addAttribute("target", $filename_content . "#range" . range_statement($annot, $node));
+            watchdog("annotation", $annot['ranges']);
+        }
+    }
+    if($output_format == 'zip'){
+        $zipfn = tempnam('/tmp', 'openethnographer_'); // XXX abstract out the prefix
+        $zip = new ZipArchive;
+        $res = $zip->open($zipfn, ZipArchive::CREATE); // XXX ideally, handle failure to open here
+        $rawtext = field_get_items('node', $node, 'body')[0]['value']; // XXX this needs to depend on what piece of content is actually in use
+        dpm($rawtext);
+        $zip->addFromString($filename_content, $rawtext);
+        $zip->addFromString($filename_structure, $tei->asXML());
+        $zip->close();
+        drupal_add_http_header('Content-Type', 'application/zip');
+        drupal_add_http_header('Content-disposition', "attachment; filename=$filename_zip");
+        readfile($zipfn);
+        drupal_exit();
+    }
+    else{ // XXX do we need xml-only output? maybe just for debugging?
+        drupal_add_http_header('Content-Type',  'text/xml; utf-8');    
+        print($tei->asXML());
+        drupal_exit();
+    }
 }
