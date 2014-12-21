@@ -107,6 +107,20 @@ function annotation_schema() {
   return $schema;
 }
 
+/**
+ * Implements hook_install().
+ */
+function annotation_install(){
+  $existing = taxonomy_vocabulary_machine_name_load('openethnographer');
+  if(!$existing){
+	$vocab = new stdClass();
+	$vocab->name = "Open Ethnographer";
+	$vocab->machine_name = 'openethnographer';
+	$vocab->description = 'Annotation classifications added by Open Ethnographer users';
+	taxonomy_vocabulary_save($vocab);
+	}
+}
+
 
 /**
  * Implements hook_uninstall().
