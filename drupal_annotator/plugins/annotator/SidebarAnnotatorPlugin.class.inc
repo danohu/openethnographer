@@ -10,6 +10,8 @@ class SidebarAnnotatorPlugin extends AnnotatorPlugin {
     drupal_add_js(drupal_get_path('module', 'annotator') . '/annotator_view/src/categories.js');
     drupal_add_js(drupal_get_path('module', 'annotator') . '/annotator_view/lib/jquery-i18n-master/jquery.i18n.js');
     drupal_add_js(drupal_get_path('module', 'annotator') . '/annotator_view/locale/en/annotator.js');
+    drupal_add_js(drupal_get_path('module', 'annotator') . '/annotator_view/lib/jquery.dateFormat.js');
+    drupal_add_js(drupal_get_path('module', 'annotator') . '/annotator_view/lib/jquery.slimscroll.js');
     drupal_add_js(drupal_get_path('module', 'annotator') . '/js/annotator_view.js');
     drupal_add_css(
 	drupal_get_path('module', 'annotator') . '/annotator_view/src/css/style.css',
