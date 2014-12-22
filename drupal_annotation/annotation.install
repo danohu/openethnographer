@@ -55,7 +55,7 @@ function annotation_schema() {
         'description' => 'Type uri of this annotation.',
         'type' => 'varchar',
         'length' => 2048, // Maximum URLs length.
-        'not null' => TRUE,
+        'not null' => FALSE, // Locations can alternatively be identified by entity ID.
         'sortable' => TRUE
       ),
       'ranges' => array(
