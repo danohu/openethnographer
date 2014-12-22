@@ -112,7 +112,9 @@ class Annotator.Plugin.Store extends Annotator.Plugin
   #
   # Returns nothing.
   _getAnnotations: =>
-    if @options.loadFromSearch
+    if typeof(@options.loadFromSearch) == 'function'
+      this.loadAnnotationsFromSearch(@options.loadFromSearch(this))
+    else if @options.loadFromSearch
       this.loadAnnotationsFromSearch(@options.loadFromSearch)
     else
       this.loadAnnotations()

@@ -71,9 +71,16 @@ function annotation_schema() {
         'not null' => TRUE,
         'default' => 0,
       ),
+      'nid' => array(
+        'description' => t('id of the node to which the node applies'),
+        'type' => 'int',
+        'not null' => FALSE,
+        'default' => 0,
+      ),
     ),
     'indexes' => array(
       'uid' => array('uid'),
+      'nid' => array('nid'),
       'annotation_updated' => array('updated'),
       'annotation_created' => array('created'),
       'annotation_type' => array(array('type', 4)),

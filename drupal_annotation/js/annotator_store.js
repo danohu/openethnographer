@@ -7,13 +7,12 @@
         showViewPermissionsCheckbox: settings.annotator_store.showViewPermissionsCheckbox,
         showEditPermissionsCheckbox: settings.annotator_store.showEditPermissionsCheckbox,
         annotationData: {
-          'uri': window.location.href,
           'type': 'annotator'
         },
-        loadFromSearch: {
-          'limit': 0,
-          'uri': window.location.href
-        }
+	loadFromSearch: function(that){
+	    	return {
+			'nid': jQuery(that.element).parents('.node').attr('id').split('-')[1]};
+	    },
       });
     }
   };

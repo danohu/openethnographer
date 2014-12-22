@@ -13,6 +13,7 @@ files[] = plugins/annotator/MarkdownAnnotatorPlugin.class.inc
 files[] = plugins/annotator/PermissionsAnnotatorPlugin.class.inc
 files[] = plugins/annotator/TagsAnnotatorPlugin.class.inc
 files[] = plugins/annotator/UnsupportedAnnotatorPlugin.class.inc
+files[] = plugins/annotator/DrupalNodeAnnotatorPlugin.class.inc
 
 dependencies[] = ctools
 dependencies[] = jquery_update
