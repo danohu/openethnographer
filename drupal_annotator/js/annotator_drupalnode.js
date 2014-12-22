@@ -15,7 +15,7 @@ Annotator.Plugin.DrupalNode = (function(_super) {
         return;
       }
 	this.annotator.subscribe('annotationEditorSubmit', function(editor, annotation){
-	    nid = editor.element.parents('.node').attr('about').split('/').slice(-1).pop();
+	    nid = editor.element.parents('.node').attr('id').split('-').slice(-1).pop();
             annotation.uri = window.location.origin + '/node/' + nid;      
             annotation.nid = nid;
 	    });
