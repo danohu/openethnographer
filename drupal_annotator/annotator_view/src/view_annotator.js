@@ -28,9 +28,10 @@ $ = jQuery;
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   //constants
-  var IMAGE_DELETE =  '../src/img/icono_eliminar.png',
-  IMAGE_DELETE_OVER = '../src/img/papelera_over.png',
-  SHARED_ICON = '../src/img/shared-icon.png';
+  var IMAGE_PATH = '/sites/all/modules/annotator/annotator_view/src/img';
+  var IMAGE_DELETE =  IMAGE_PATH + '/icono_eliminar.png',
+  IMAGE_DELETE_OVER = IMAGE_PATH + '/papelera_over.png',
+  SHARED_ICON = IMAGE_PATH + '/shared-icon.png';
 
   Annotator.Plugin.AnnotatorViewer = (function(_super) {
     __extends(AnnotatorViewer, _super);
@@ -247,7 +248,7 @@ $ = jQuery;
 
       var shared_annotation = "";      
       var class_label = "label";
-      var delete_icon = "<img src=\""+IMAGE_DELETE+"\" class=\"annotator-viewer-delete\" title=\""+ i18n_dict.Delete +"\" style=\" float:right;margin-top:3px;;margin-left:3px\"/><img src=\"../src/img/edit-icon.png\"   class=\"annotator-viewer-edit\" title=\"Edit\" style=\"float:right;margin-top:3px\"/>";
+      var delete_icon = "<img src=\""+IMAGE_DELETE+"\" class=\"annotator-viewer-delete\" title=\""+ i18n_dict.Delete +"\" style=\" float:right;margin-top:3px;;margin-left:3px\"/><img src=\"" + IMAGE_PATH + "/edit-icon.png\"   class=\"annotator-viewer-edit\" title=\"Edit\" style=\"float:right;margin-top:3px\"/>";
       
       if (annotation.estat==1 ||true || annotation.permissions.read.length===0 ) {
         shared_annotation = "<img src=\""+SHARED_ICON+"\" title=\""+ i18n_dict.share +"\" style=\"margin-left:5px\"/>"
