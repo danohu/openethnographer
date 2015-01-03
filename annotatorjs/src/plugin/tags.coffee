@@ -18,6 +18,9 @@ class Annotator.Plugin.Tags extends Annotator.Plugin
     stringifyTags: (array) ->
       array.join(" ")
 
+    # Configurable function which is called just before pluginInit returns
+    onInit: (x) -> null
+
   # The field element added to the Annotator.Editor wrapped in jQuery. Cached to
   # save having to recreate it everytime the editor is displayed.
   field: null
@@ -51,6 +54,8 @@ class Annotator.Plugin.Tags extends Annotator.Plugin
         property: 'tags'
         isFiltered: Annotator.Plugin.Tags.filterCallback
 
+
+    @options.onInit(this)
     @input = $(@field).find(':input')
 
   # Public: Extracts tags from the provided String.

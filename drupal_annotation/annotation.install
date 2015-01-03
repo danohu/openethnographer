@@ -55,7 +55,7 @@ function annotation_schema() {
         'description' => 'Type uri of this annotation.',
         'type' => 'varchar',
         'length' => 2048, // Maximum URLs length.
-        'not null' => TRUE,
+        'not null' => FALSE, // Locations can alternatively be identified by entity ID.
         'sortable' => TRUE
       ),
       'ranges' => array(
@@ -71,9 +71,21 @@ function annotation_schema() {
         'not null' => TRUE,
         'default' => 0,
       ),
+      'nid' => array(
+        'description' => t('id of the node to which the annotation applies'),
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+      'tid' => array(
+        'description' => t('id of a taxonomy tag for this annotation'),
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
     ),
     'indexes' => array(
       'uid' => array('uid'),
+      'nid' => array('nid'),
+      'tid' => array('tid'),
       'annotation_updated' => array('updated'),
       'annotation_created' => array('created'),
       'annotation_type' => array(array('type', 4)),
@@ -83,11 +95,30 @@ function annotation_schema() {
         'table' => 'users',
         'columns' => array('uid' => 'uid'),
       ),
+      'tid' => array(
+        'table' => 'taxonomy_term_data',
+        'columns' => array('tid' => 'tid'),
+      ),
     ),
     'primary key' => array('id'),
   );
   return $schema;
 }
+
+/**
+ * Implements hook_install().
+ */
+function annotation_install(){
+  $existing = taxonomy_vocabulary_machine_name_load('openethnographer');
+  if(!$existing){
+	$vocab = new stdClass();
+	$vocab->name = "Open Ethnographer";
+	$vocab->machine_name = 'openethnographer';
+	$vocab->description = 'Annotation classifications added by Open Ethnographer users';
+	taxonomy_vocabulary_save($vocab);
+	}
+}
+
 
 /**
  * Implements hook_uninstall().
