@@ -1,0 +1,5 @@
+/* jQuery default is 100, but we need more to get the autocomplete on top of Annotator.*/
+.ui-front {
+  z-index: 100090;
+}
+
