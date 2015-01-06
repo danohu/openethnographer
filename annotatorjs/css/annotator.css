@@ -103,7 +103,7 @@
 	background-position: center right;
 }
 
-.annotator-adder button {
+.annotator-adder button, .annotator-adder button:hover {
 	display: block;
 	width: 36px;
 	height: 41px;
