@@ -17,6 +17,7 @@
  	      source: Drupal.settings.autocomplete_terms,
 	      delay: 0,
 	      position: { my : "left top", at: "left bottom" },
+	      autoFocus: true
 	  });
 	}
 
