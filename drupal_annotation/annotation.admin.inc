@@ -70,12 +70,14 @@ function annotation_admin_content($form, $form_state) {
 
   // Build the sortable table header.
   $header = array(
-    'text' => array('data' => t('Text'), 'field' => 'a.text'),
+    'id' => array('data' => t('ID'), 'field' => 'a.id', 'sort' => 'asc'),
     'type' => array('data' => t('Type'), 'field' => 'a.type'),
+    'nid' => array('data' => t('Node ID'), 'field' => 'a.nid'),
     'quote' => array('data' => t('Quote'), 'field' => 'a.quote'),
-    'uri' => array('data' => t('Uri'), 'field' => 'a.uri'),
+    'text' => array('data' => t('Text'), 'field' => 'a.text'),
+    'tid' => array('data' => t('Tag ID'), 'field' => 'a.tid'),
     'author' => t('Author'),
-    'timestamp' => array('data' => t('Updated'), 'field' => 'a.updated', 'sort' => 'desc'),
+    'timestamp' => array('data' => t('Updated'), 'field' => 'a.updated'),
     'operations' => array('data' => t('Operations')),
   );
 
@@ -98,10 +100,12 @@ function annotation_admin_content($form, $form_state) {
   foreach ($annotations as $annotation) {
     $annotation_type = annotation_type_load($annotation->type);
     $options[$annotation->id] = array(
-      'text' => $annotation->text,
-      'quote' => $annotation->quote,
-      'uri' => l($annotation->uri, $annotation->uri),
+      'id' => $annotation->id,
       'type' => $annotation_type->label,
+      'nid' => $annotation->nid,
+      'quote' => $annotation->quote,
+      'text' => $annotation->text,
+      'tid' => $annotation->tid != NULL ? l($annotation->tid, "taxonomy/term/$annotation->tid") : 'NULL',
       'author' => theme('username', array('account' => $accounts[$annotation->uid])),
       'timestamp' => format_date($annotation->updated, 'short'),
       'operations' => array(),

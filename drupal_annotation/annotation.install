@@ -77,7 +77,7 @@ function annotation_schema() {
         'not null' => FALSE,
       ),
       'tid' => array(
-        'description' => t('id of a taxonomy tag for this annotation'),
+        'description' => t('id of a taxonomy term for this annotation'),
         'type' => 'int',
         'not null' => FALSE,
       ),
