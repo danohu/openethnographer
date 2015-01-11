@@ -77,6 +77,34 @@ class AnnotationAPIController extends EntityAPIController {
     // $user = $wrapper->user->name->value();
     // dsm(get_properties($wrapper));
     // dsm($user);
+    // TODO Add the following only if Annotator's "Tags" plugin is enabled at /admin/config/content/annotator.
+
+    if ($entity->tid != NULL) {
+      $term = taxonomy_term_load($entity->tid);
+      $term_markup = l($term->name, "taxonomy/term/$term->tid") . " (tid: $term->tid)";
+    }
+    else { 
+      $term_markup = '';
+    }
+    $content['tid'] = array(
+      '#theme' => 'field',
+      '#weight' => 0,
+      '#title' =>t('Tag'),
+      '#access' => TRUE,
+      '#label_display' => 'inline',
+      '#view_mode' => 'full',
+      '#language' => LANGUAGE_NONE,
+      '#field_name' => 'field_fake_tid',
+      '#field_type' => 'text',
+      '#entity_type' => 'annotation',
+      '#bundle' => $entity->type,
+      '#items' => array(
+        array('value' => $entity->tid),
+      ),
+      '#formatter' => 'text_default', // Default formatter of this field_type, see field_info_field_types().
+      0 => array( '#markup' => $term_markup ),
+    );
+
     $content['#view_mode'] = $view_mode;
     return parent::buildContent($entity, $view_mode, $langcode, $content);
   }

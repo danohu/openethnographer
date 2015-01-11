@@ -167,7 +167,6 @@ function annotation_api_search() {
   $quote   = isset($_GET['quote'])   ? $_GET['quote']      : NULL;
   $uri     = isset($_GET['uri'])     ? $_GET['uri']        : NULL;
   $nid     = isset($_GET['nid'])     ? $_GET['nid']        : NULL;
-  $tags    = isset($_GET['tags'])    ? explode(',', $tags) : NULL;
 
   // Initiate query
   $query = new EntityFieldQuery();
@@ -245,15 +244,31 @@ function annotation_api_from_stdin() {
   return $entity;
 }
 
+/**
+ * Get Drupal taxonomy term objects based on tag names.
+ *
+ * Notes are treated case-insensitive and ignoring leading and trailing whitespace, 
+ * as per https://api.drupal.org/api/function/taxonomy_get_term_by_name
+ * NOTE, currently only the first tag name is evaluated.
+ *
+ * @param tagarr Array Array of strings with tag names.
+ * @param should_create Boolean If true and a tag by the same name does not exist yet, the 
+ *   tag will be created and returned.
+ * @return The tag object, is found or created. Else, NULL.
+ */
 function get_tag($tagarr, $should_create){
     if(!$tagarr) return NULL;
     $tagtext = $tagarr[0];    
     $vocabulary_name = 'openethnographer';
     $tags = taxonomy_get_term_by_name($tagtext, $vocabulary_name);
     if($tags){
-        return $tags[0] ;
+        // Multiple results are possible due to case insensitive search on the trimmed name.
+        // But ignored as tags are created below only if they'll be the only result.
+        return array_values($tags)[0]; 
     }
     if($should_create){
+        // PRE: $tagtext is unique in this vocab, as else a tag would've been returned above.
+        // (We have to ensure unique tag naming, as Annotator uses names as IDs.) 
         $tag = new stdClass();
         $tag->name = $tagtext;
         $vocabulary = taxonomy_vocabulary_machine_name_load($vocabulary_name);

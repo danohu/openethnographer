@@ -55,7 +55,7 @@ function annotation_schema() {
         'description' => 'Type uri of this annotation.',
         'type' => 'varchar',
         'length' => 2048, // Maximum URLs length.
-        'not null' => TRUE,
+        'not null' => FALSE, // Locations can alternatively be identified by entity ID.
         'sortable' => TRUE
       ),
       'ranges' => array(
@@ -75,13 +75,11 @@ function annotation_schema() {
         'description' => t('id of the node to which the annotation applies'),
         'type' => 'int',
         'not null' => FALSE,
-        'default' => 0,
       ),
       'tid' => array(
-        'description' => t('id of a taxonomy tag for this annotation'),
+        'description' => t('id of a taxonomy term for this annotation'),
         'type' => 'int',
         'not null' => FALSE,
-        'default' => 0,
       ),
     ),
     'indexes' => array(
