@@ -167,7 +167,6 @@ function annotation_api_search() {
   $quote   = isset($_GET['quote'])   ? $_GET['quote']      : NULL;
   $uri     = isset($_GET['uri'])     ? $_GET['uri']        : NULL;
   $nid     = isset($_GET['nid'])     ? $_GET['nid']        : NULL;
-  $tags    = isset($_GET['tags'])    ? explode(',', $tags) : NULL;
 
   // Initiate query
   $query = new EntityFieldQuery();
