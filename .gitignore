@@ -1,3 +1,6 @@
 # Ignore the compiled files in the pkg directory, except the Makefile.
 /annotatorjs/pkg/**
 !/annotatorjs/pkg/Makefile
+
+# Ignore Linux backup files.
+*~
