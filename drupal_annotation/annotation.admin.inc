@@ -117,7 +117,7 @@ function annotation_admin_content($form, $form_state) {
         'href' => 'annotation/' . $annotation->id,
       );
       $operations['delete'] = array(
-        'title' => t('Delete'),
+        'title' => t('delete'),
         'href' => 'annotation/' . $annotation->id . '/delete',
         'query' => $destination,
       );
