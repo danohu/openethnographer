@@ -88,7 +88,6 @@ function annotation_api_read($id) {
   if ($annotation = entity_object_load($id, 'annotation')) {
     if (annotation_access('view', $annotation)) {
       $record = entity_load_single('annotation', $id);
-      $record = array_shift($record);
       $record = annotation_api_entity_prepare($record, 'read');
       // Send response
       return drupal_json_output($record);
