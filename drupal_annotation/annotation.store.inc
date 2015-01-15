@@ -300,9 +300,11 @@ function annotation_api_entity_prepare($entity, $op) {
         'name' => format_username($account),
         'roles' => array_values($account->roles),
       );
+      unset($entity->uid);
+
       $tag = taxonomy_term_load($entity->tid);
       if($tag) $entity->tags = array($tag->name);
-      unset($entity->uid);
+      // unset($entity->tid); // TODO Probably to activate, as Annotator should know tags only by name. But has to be tested.
 
       $entity->links[] = array(
         'href' => url('annotation/' . $entity->id),
@@ -312,13 +314,19 @@ function annotation_api_entity_prepare($entity, $op) {
       break;
     case 'create':
       $entity->uid = $entity->user;
+      unset($entity->user);
+
+      // Tags are given by tag name due to auto-completion, but annotation entities need a Drupal Taxonomy term ID (tid).
       $tag = get_tag($entity->tags, TRUE);
       $entity->tid = is_null($tag) ? NULL : $tag->tid;
       unset($entity->tag);
-      unset($entity->user);
       break;
     case 'update':
-      break;
+      unset($entity->user);
+      // Tags are given by tag name due to auto-completion, but annotation entities need a Drupal Taxonomy term ID (tid).
+      $tag = get_tag($entity->tags, TRUE);
+      $entity->tid = is_null($tag) ? NULL : $tag->tid;
+      unset($entity->tag);
   }
   return $entity;
 }
