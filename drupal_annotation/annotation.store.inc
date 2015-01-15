@@ -2,6 +2,10 @@
 
 /**
  * Annotator Store API
+ * 
+ * TODO Since this storage API is tied to the Annotator JS library, it should be in the StoreAnnotatorPlugin, 
+ * not here in the main module.
+ *
  * @see https://github.com/okfn/annotator/wiki/Storage
  */
 
@@ -225,7 +229,8 @@ function annotation_api_search() {
 }
 
 /**
- * Get data from stdin
+ * Obtain an annotation entity object in JSON format from stdin.
+ *
  * @see http://php.net/manual/en/features.file-upload.put-method.php
  */
 function annotation_api_from_stdin() {
@@ -239,7 +244,7 @@ function annotation_api_from_stdin() {
   fclose($put);
 
   $entity = (object) drupal_json_decode($json);
-  $entity = annotation_api_entity_prepare($entity);
+  $entity = annotation_api_entity_prepare($entity); // TODO Second argument missing to indicate operation?
   return $entity;
 }
 
@@ -282,6 +287,9 @@ function get_tag($tagarr, $should_create){
 
 /**
  * Prepare entity for api usage
+ *
+ * Necessary because the data provided by a client (like the Annotator JS library) can differ from 
+ * proper Drupal annotation entity objects, so these differences have to be fixed first.
  */
 function annotation_api_entity_prepare($entity, $op) {
   switch($op) {

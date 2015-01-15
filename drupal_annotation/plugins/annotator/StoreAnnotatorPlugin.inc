@@ -1,5 +1,6 @@
 <?php
 
+// Configuration for loading this plugin, as expected by the CTools plugin mechanism.
 $plugin = array(
   'name' => 'store',
   'label' => t('Store'),
@@ -8,3 +9,4 @@ $plugin = array(
     'class' => 'StoreAnnotatorPlugin',
   ),
 );
+

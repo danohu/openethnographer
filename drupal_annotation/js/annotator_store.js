@@ -9,10 +9,11 @@
         annotationData: {
           'type': 'annotator'
         },
-	loadFromSearch: function(that){
-	    	return {
-			'nid': jQuery(that.element).parents('.node').attr('id').split('-')[1]};
-	    },
+        loadFromSearch: function(that){
+	    	  return {
+			      'nid': jQuery(that.element).parents('.node').attr('id').split('-')[1]
+          };
+	      },
       });
     }
   };
