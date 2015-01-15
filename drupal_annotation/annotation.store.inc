@@ -136,7 +136,7 @@ function annotation_api_search() {
   $total = 0;
   $records = array();
 
-  if (user_access('view annotations') ) {
+  if (user_access('view any annotations') ) {
     if (isset($_GET['user'])) {
       $username = $_GET['user'];
       $account = user_load(array('name' => check_plain($username)));
