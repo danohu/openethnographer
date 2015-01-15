@@ -350,6 +350,26 @@ function annotation_type_get_names() {
 }
 
 /**
+ * Implements hook_taxonomy_term_delete().
+ */
+ 
+function annotation_taxonomy_term_delete($term)
+{
+    // remove all references to this term from the annotations table
+
+    $altered = db_update('annotation')
+        ->fields(array('tid' => NULL))
+        ->condition('tid', $term->tid)
+        ->execute();
+
+    // delete annotations which now have neither tag nor comment
+    $deleted = db_delete('annotation')
+        ->condition('tid', NULL)
+        ->condition('text', '')
+        ->execute();
+}
+
+/**
  * Implements hook_ctools_plugin_directory().
  */
 function annotation_ctools_plugin_directory($module, $plugin) {
