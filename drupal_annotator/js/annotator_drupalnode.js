@@ -19,6 +19,21 @@ Annotator.Plugin.DrupalNode = (function(_super) {
             annotation.uri = window.location.origin + '/node/' + nid;      
             annotation.nid = nid;
 	    });
+	
+	this.annotator.subscribe('annotationsLoaded', function(annotations){
+	        jQuery('.annotator-hl').each(function(){
+		    if(
+			jQuery(this).data('annotation').user.uid == Drupal.settings.annotator_permissions.user.uid){
+			jQuery(this).addClass('annotator-own-annotation');
+		    }
+		    else {
+			jQuery(this).addClass('annotator-others-annotation');
+		    }
+		}
+					    );
+	});
+			    
+
 
 
     };
