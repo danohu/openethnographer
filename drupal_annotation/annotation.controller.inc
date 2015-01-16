@@ -48,6 +48,27 @@ class AnnotationAPIController extends EntityAPIController {
         '#markup' => '<blockquote cite="' . url("{$entity->entity_type}/{$entity->entity_id}") . '">' . check_plain($entity->quote) . '</blockquote>'
       )
     );
+    $content['context'] = array(
+      '#theme' => 'field',
+      '#weight' => 0,
+      '#title' =>t('Quote in Context'),
+      '#access' => TRUE,
+      '#label_display' => 'above',
+      '#view_mode' => 'full',
+      '#language' => LANGUAGE_NONE,
+      '#field_name' => 'field_fake_quote',
+      '#field_type' => 'text',
+      '#entity_type' => 'annotation',
+      '#bundle' => $entity->type,
+      '#items' => array(
+        array('value' => $entity->quote . 'omgwtfbbq')
+      ),
+      '#formatter' => 'text_default',
+      0 => array(
+          '#markup' => '<blockquote cite="' . check_plain($entity->uri) . '">' . annotation_extract($entity, 15, 15, false) . '</blockquote>'
+      )
+    );
+
     $content['text'] = array(
       '#theme' => 'field',
       '#weight' => 0,
@@ -114,18 +135,23 @@ class AnnotationAPIController extends EntityAPIController {
   }
 }
 
-function get_properties($obj, $values=false) {
-  $obj_dump  = print_r($obj, 1);
-  $matches =  array();
-  preg_match_all('/^\s+\[(\w+).*\] => (\w*)/m', $obj_dump, $matches);
-  if ($values) {
-    $output = array();
-    foreach ($matches[1] as $key => $property) {
-      $output[$property] = $matches[2][$key];
+
+function get_properties($obj, $values=false)
+{
+    $obj_dump  = print_r($obj, 1);
+    $matches =  array();
+    preg_match_all('/^\s+\[(\w+).*\] => (\w*)/m', $obj_dump, $matches);
+    if ($values)
+    {
+        $output = array();
+        foreach ($matches[1] as $key => $property)
+        {
+            $output[$property] = $matches[2][$key];
+        }
+        return $output;
     }
-    return $output;
-  }
-  else {
-    return $matches[1];
-  }
+    else
+    {
+        return $matches[1];
+    }
 }

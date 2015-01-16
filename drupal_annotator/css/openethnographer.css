@@ -1,8 +1,81 @@
+.annotator-hl, .annotator-hl.annotator-own-annotation, .annotator-hl.annotator-others-annotation, .annotator-extract-highlighted {
+    padding: 4px 8px;
+    margin-right: -3px;
+    margin-left: -3px;
+}
+
 .annotator-hl.annotator-others-annotation {
     background-color: hsla(60, 50%, 52%, 0.3)
     }
 
-.annotator-hl.annotator-own-annotation {
+.annotator-hl.annotator-own-annotation, .annotator-extract-highlighted {
     background-color: hsla(60, 100%, 52%, 0.3)
     }
+
+.annotator-term-group {
+    padding-top: 20px;
+}
+
+.annotator-term-nodetitle {
+    font-size: 21px;
+    padding-bottom: 35px;
+}
+
+.annotator-nodetitle-term-name {
+    display: none;
+    }
+
+.annotator-term-group {
+    float: left;
+    clear: left;
+    }
+
+.annotator-extractgroup {
+    margin-left: 35px;
+    margin-right: 35px;
+    }
+
+.annotator-extract-wrapper {
+    background-color: hsla(0, 0%, 83%, 0.5);
+    border-radius: 14px;
+    padding: 8px 14px;
+    display: inline-block;
+    line-height: 1.5;
+    letter-spacing: 0.4px;
+    }
+
+.annotator-annotation-block {
+    margin-bottom: 14px;
+    float: left;
+    clear: left;
+    }
+
+.annotator-extract-before, .annotator-extract-after {
+   color: #747474;
+}
+
+.annotator-extract-comment-wrapper {}
+
+.annotator-extract-author-wrapper {
+    margin-left: 80px;
+    margin-top: 3px;
+}
+.annotator-extract-comment {
+    font-style: italic;
+    }
+
+.annotator-extract-before:before {
+   color: #747474;
+   content: "...";
+}
+ .annotator-extract-after:after {
+   content: "...";
+   margin-left: -5px;
+}
+
+.annotator-extract-highlighted {
+   color: #111;
+   border-radius: 3.5px;
+
+}
 
