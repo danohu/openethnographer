@@ -1,4 +1,5 @@
-<?php
+<?php 
+
 /**
  * Implements hook_permission().
  */
@@ -36,7 +37,6 @@ function annotation_permission() {
     ),
   );
 }
-
 
 /**
  * Implements hook_entity_info().
@@ -133,6 +133,10 @@ function annotation_entity_property_info_alter(&$info) {
  */
 function annotation_menu() {
   $items = array();
+
+  // Admin menu items.
+
+  // Admin menu item for the page to list annotations.
   $items['admin/content/annotation'] = array(
     'title' => 'Annotations',
     'description' => 'Manage Annotations',
@@ -147,6 +151,7 @@ function annotation_menu() {
     'type' => MENU_DEFAULT_LOCAL_TASK,
   );
 
+  // Admin menu item for the page to list annotation types.
   $items['admin/structure/annotation'] = array(
     'title' => 'Annotation',
     'description' => 'Manage annotaions.',
@@ -159,6 +164,8 @@ function annotation_menu() {
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => -10,
   );
+
+  // Admin menu item for the page to add a new annotation type. Work in progress, so disabled in the release so far.
   /*
   $items['admin/structure/annotation/add'] = array(
     'title' => 'Add annotation type',
@@ -169,6 +176,8 @@ function annotation_menu() {
     'file' => 'annotation.admin.inc',
   );
   */
+
+  // Admin menu items to edit annotation types, one for each annotation type.
   $entity_info = entity_get_info('annotation');
   foreach ($entity_info['bundles'] as $annotation_type => $bundle_info) {
     if (isset($bundle_info['admin'])) {
@@ -200,6 +209,10 @@ function annotation_menu() {
       );
     }
   }
+
+  // Frontend menu items.
+
+  // Parametric frontend menu item to view a single annotation.
   $items['annotation/%entity_object'] = array(
     'load arguments' => array('annotation'),
     'title callback' => 'entity_label',
@@ -210,6 +223,8 @@ function annotation_menu() {
     'access arguments' => array('view', 1),
     'file' => 'annotation.pages.inc',
   );
+
+  // Parametric frontend menu item to delete a single annotation.
   $items['annotation/%entity_object/delete'] = array(
     'load arguments' => array('annotation'),
     'title' => 'Delete',
@@ -222,6 +237,16 @@ function annotation_menu() {
     'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
     'file' => 'annotation.pages.inc',
   );
+
+  // Frontend menu item for a page to export annotations.
+  $items['annotation/export'] = array(
+    'title' => 'Export my annotations',
+    'page callback' => 'annotation_export_submit',
+    'page arguments' => array(2),
+    'access arguments' => array('create annotations'), // Since users who may annotate may also view and export their work.
+  );
+
+  // Menu items for the annotation API.
 
   // Index; API endpoint
   $items['annotation/api'] = array(
@@ -238,6 +263,7 @@ function annotation_menu() {
     'type' => MENU_CALLBACK,
     'file' => 'annotation.store.inc',
   );
+  // View / Edit / Delete; API endpoint to update an existing annotation
   $items['annotation/api/annotations/%'] = array(
     'page callback' => 'annotation_api_endpoint',
     'page arguments' => array(3),
@@ -246,6 +272,7 @@ function annotation_menu() {
     'type' => MENU_CALLBACK,
     'file' => 'annotation.store.inc',
   );
+  // Search; API endpoint to searh in existing annotations
   $items['annotation/api/search'] = array(
     'page callback' => 'annotation_api_search',
 //    'access callback' => 'annotation_access',
@@ -253,6 +280,7 @@ function annotation_menu() {
     'type' => MENU_CALLBACK,
     'file' => 'annotation.store.inc',
   );
+
   return $items;
 }
 
@@ -388,3 +416,458 @@ function annotation_ctools_plugin_type() {
     ),
   );
 }
+
+
+//
+// Section: Exporting to RQDA
+//
+
+/**
+ * Sanitize a string for usage in a filename.
+ *
+ * Code taken over from the Drupal transliteration module's transliteration_clean_filename() since we 
+ * do not want a dependency from a module just because of this one function.
+ *
+ * @see http://drupalcontrib.org/api/drupal/contributions!transliteration!transliteration.module/function/transliteration_clean_filename/7
+ */
+function _clean_filename($filename) {
+  // Replace whitespace.
+  $filename = str_replace(' ', '_', $filename);
+  // Remove remaining unsafe characters.
+  $filename = preg_replace('![^0-9A-Za-z_.-]!', '', $filename);
+  // Remove multiple consecutive non-alphabetical characters.
+  $filename = preg_replace('/(_)_+|(\.)\.+|(-)-+/', '\\1\\2\\3', $filename);
+  // Force lowercase to prevent issues on case-insensitive file systems.
+  if (variable_get('transliteration_file_lowercase', TRUE)) {
+    $filename = strtolower($filename);
+  }
+  return $filename;
+}
+
+/**
+ * Menu callback that collects the export form options and initiates the export of annotations.
+ */
+function annotation_export_submit() {  
+  global $user;
+
+  // Generate the filename to export to. Must be unique, as it will be saved in a tmp directory.
+  $export_filename = "Codings_by_" . $user->name . '_' . date('Y-m-d_H-i-s') . ".rqda";
+  $export_filename = _clean_filename($export_filename);
+
+  $export_pathname = file_directory_temp() . "/$export_filename";
+
+  $success = annotation_export_rqda($user->uid, $export_pathname);
+
+  // Offer the exported file to the user for download.
+  if ($success === TRUE) {
+    drupal_add_http_header('Content-Type', 'application/x-sqlite3');
+    drupal_add_http_header('Content-disposition', "attachment; filename=$export_filename");
+    readfile($export_pathname);
+    drupal_exit();
+  }
+  // Or log an error message.
+  else {
+    $message = 'Failed to export your annotations.';
+    drupal_set_message($message, 'error');
+    watchdog('annotation', $messsage, array(), WATCHDOG_ERROR);
+  }
+}
+
+/**
+ * Obtain the node IDs of all nodes annotated by the given user.
+ */
+function annotation_nids($uid) {
+  $query = db_select('annotation', 'anno');
+  $result = $query
+    ->distinct()
+    ->fields('anno', array('nid'))
+    ->condition('uid', $uid, '=')
+    ->isNotNull('tid')
+    ->orderBy('nid')
+    ->execute()
+    ->fetchCol(0);
+  return $result;
+}
+
+/**
+ * Obtain the tag IDs of all annotation tags (used or unused) which are owned by the specified user.
+ */
+function annotation_tids($uid) {
+  $vocabulary = taxonomy_vocabulary_machine_name_load('openethnographer');
+  
+  $query = db_select('taxonomy_term_data', 'terms');
+  $result = $query
+    ->fields('terms', array('tid'))
+    ->condition('vid', $vocabulary->vid, '=')
+    ->orderBy('tid')
+    ->execute()
+    ->fetchCol(0);
+  return $result;
+}
+
+/**
+ * Obtain the IDs of all annotations which are created by the specified user.
+ */
+function annotation_ids($uid){
+  $query = db_select('annotation', 'anno');
+  $result = $query
+    ->fields('anno', array('id'))
+    ->condition('uid', $uid, '=')
+    ->orderBy('nid') // So when traversing the result, nodes are only reloaded when needed.
+    ->execute()
+    ->fetchCol(0);
+
+  return $result;
+}
+
+/**
+ * Create the RQDA database schema in the given SQLite3 database.
+ *
+ * When updates of RQDA are released, the schema definition can be updated by creating and 
+ * saving project in RQDA, then exporting its schema with for example sqliteman.
+ */
+function annotation_create_rqda_schema($db) {
+  $db->exec('PRAGMA foreign_keys=OFF');
+  $db->exec('BEGIN TRANSACTION');
+
+  $db->exec('CREATE TABLE source ( 
+    name text, id integer, file text, memo text, owner text, date text, dateM text, status integer )');
+  $db->exec('CREATE TABLE freecode ( 
+    name text, memo text, owner text, date text, dateM text, id integer, status integer, color text )');
+  $db->exec('CREATE TABLE treecode ( 
+    cid integer, catid integer, date text, dateM text, memo text, status integer, owner text )');
+  $db->exec('CREATE TABLE treefile ( 
+    fid integer, catid integer, date text, dateM text, memo text, status integer, owner text )');
+  $db->exec('CREATE TABLE filecat (
+    name text,fid integer, catid integer, owner text, date text, dateM text, memo text, status integer )');
+  $db->exec('CREATE TABLE codecat ( 
+    name text, cid integer, catid integer, owner text, date text, dateM text, memo text, status integer)');
+  $db->exec('CREATE TABLE coding ( 
+    cid integer, fid integer, seltext text, selfirst real, selend real, status integer, owner text, date text, memo text )');
+  $db->exec('CREATE TABLE coding2 (
+    cid integer, fid integer, seltext text, selfirst real, selend real, status integer, owner text, date text, memo text )');
+  $db->exec('CREATE TABLE project (
+    databaseversion text, date text, dateM text, memo text,about text, imageDir text )');
+  $db->exec('CREATE TABLE cases (
+    name text, memo text, owner text, date text,dateM text, id integer, status integer )');
+  $db->exec('CREATE TABLE caselinkage ( 
+    caseid integer, fid integer, selfirst real, selend real, status integer, owner text, date text, memo text )');
+  $db->exec('CREATE TABLE attributes (
+    name text, status integer, date text, dateM text, owner text,memo text, class text )');
+  $db->exec('CREATE TABLE caseAttr (
+    variable text, value text, caseID integer, date text, dateM text, owner text, status integer )');
+  $db->exec('CREATE TABLE fileAttr ( 
+    variable text, value text, fileID integer, date text, dateM text, owner text, status integer )');
+  $db->exec('CREATE TABLE journal ( 
+    name text, journal text, date text, dateM text, owner text, status integer )');
+  $db->exec('CREATE TABLE annotation (
+    fid integer, position integer, annotation text, owner text, date text, dateM text, status integer )');
+  $db->exec('CREATE TABLE image ( 
+    name text, id integer, date text, dateM text, owner text, status integer)');
+  $db->exec('CREATE TABLE imageCoding ( 
+    cid integer, iid integer, x1 integer, y1 integer, x2 integer, y2 integer, memo text, date text, dateM text, owner text,status integer)');
+
+  
+  $db->exec("INSERT INTO project VALUES ( 
+    '0.2.2', '" . date('Y-m-d H:i:s') . "', NULL, '', 
+    'Database created by Open Ethnographer (https://github.com/edgeryders/openethnographer)', NULL )");
+  $db->exec('COMMIT TRANSACTION');
+}
+
+/**
+ * Add a blank line (two <br/> nodes) at the end of the DOM node if it is a blocklevel node.
+ *
+ * This prepares the node for conversion to plain text. It applies to all block-level nodes except pure container nodes (ul, ol, dl).
+ * 
+ * Adding blank lines cannot be done on the fly when traversing a DOM tree and aggregating the plain text elements. Because 
+ * we must process parent tags before child tags to not aggregate child text content prematurely, while to insert blank lines 
+ * at the end of a blocklevel tag would require to process them after child tags. So we use this "hack" ...
+ */
+function insert_blankline($node) {
+  $blocklevel_tags = array('h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'div', 'p', 'li', 'dt', 'dd', 'th', 'tr');
+
+  if ($node->nodeType === XML_ELEMENT_NODE and in_array($node->tagName, $blocklevel_tags )) {
+    $br_node_1 = $node->ownerDocument->createElement('br');
+    $br_node_2 = $node->ownerDocument->createElement('br');
+    return $node->appendChild($br_node_1)->appendChild($br_node_2);
+  }
+}
+
+/**
+ * Convert the given DOM node to plain text, not considering its child nodes.
+ * 
+ * Every XML_TEXT_NODE will be converted to its text, br to a newline, and everything else to the empty string. Use insert_blankline() 
+ * before to prepare blocklevel tags for conversion to plain text, if necessart.
+ */
+function dom_element_text($node) {
+  if ($node->nodeType === XML_TEXT_NODE) {
+    // Eliminate existing linebreaks. In HTML, they are not visible, only used for source formatting.
+    return str_replace("\r", "", str_replace("\n", "", $node->wholeText));
+  }
+  elseif ($node->nodeType === XML_ELEMENT_NODE and $node->tagName == 'br') {
+    return PHP_EOL;
+  }
+  else {
+    return '';
+  }
+}
+
+/**
+ * Determine the character index that the first character of the specified tag has in a plaintext version of the given DOM document.
+ *
+ * @param dom DOMDocument
+ * @param xpath String A string with an XPath query that specifies exactly one DOM element. If the query result is multiple elements, 
+ *   only the first one will be used.
+ * @return integer
+ */
+function index_at_xpath($dom, $xpath_exp) {
+  // dpm("Debug: Going to calculate index_at_xpath() for $xpath_exp for document:\n" . $dom->saveHTML());
+
+  $text = '';
+
+  $xpath = new DomXPath($dom);
+  $target_list = $xpath->query($xpath_exp);
+  if ($target_list->length >= 1) {
+    $target = $target_list->item(0);
+    // dpm("Debug: Found xpath target node: " . $target->ownerDocument->saveHTML($target));
+  }
+  else {
+    return FALSE;
+  }
+
+  // Traverse the DOM while converting it to plain text.
+  //   (Parent nodes have to be processed before children, because else all child node text is appended always, which is wrong if the 
+  //   parent node is the target node.)
+  $iter = new RecursiveIteratorIterator( new RecursiveDOMIterator($dom), RecursiveIteratorIterator::SELF_FIRST );
+  foreach($iter as $node) {
+    if ($node->isSameNode($target)) {
+      // dpm("Debug: Found xpath target node in DOM document. Preceding text: $text");
+
+      // Return the index of the first character in $target, which happens to be the same as the length of the aggregated plain text.
+      // To prevent multibyte UTF-8 characters as counting for more than one character, we replace them with "?" first via utf8_decode().
+      return strlen(utf8_decode($text));
+    }
+    else {
+      $text .= dom_element_text($node);
+    }
+  }
+}
+
+
+define('ANNOTATION_START', 0);
+define('ANNOTATION_END', 1);
+
+/**
+ * Convert a JSON encoded annotation range from XPath to start and end character indices for plain text.
+ *
+ * Currently, only the first text range is decoded and returned. However, multiple ranges cannot be used by any client of the 
+ * Drupal annotation plugin so far (means, Annotator JS, Open Ethnographer).
+ *
+ * @param $position Either ANNOTATION_START or ANNOTATION_END, depending on if you want the start or end character index of the 
+ *   given annotation's range calculated.
+ * @return mixed The required character index as an integer, or FALSE in error cases (incl. when giving an unknown value as 
+ *   the position parameter).
+ */
+function annotation_index($node, $anno, $position){
+  // Cache a DOM representation of the body field into the node.
+  if (!isset($node->bodyDom) or get_class($node->bodyDom) != 'DOMDocument') {
+    $node->bodyDom = new DOMDocument;
+    $node_body_html = field_get_items('node', $node, 'body')[0]['value'];
+    $success = $node->bodyDom->loadHTML("<div>$node_body_html</div>"); // DOMDocument needs exactly one outer tag, so we make it so. 
+    //   See http://stackoverflow.com/a/12806767/1270008 .
+
+    // Bad success also happens for warnings (already generating their own log entries), so proceed if meaningful.
+    if ($success === FALSE and $node->bodyDom->childNodes->length === 0) {
+      $message = "Could not create DOM object for node {$node->nid}.";
+      drupal_set_message($message, 'error');
+      watchdog('annotation', $message, array(), WATCHDOG_ERROR);
+      unset($node->bodyDom);
+      return FALSE;
+    }
+
+    // Traverse the DOM to insert blanklines before the end of blocklevel tags.
+    // (This is done during HTML-to-plaintext conversion, so we also have to do it here to be able to calculate the fitting character indexes.)
+    // TODO Refactor this by outsourcing DOM preparation for plaintext conversion into a function call to avoid the redundancy.
+    $iter = new RecursiveIteratorIterator( new RecursiveDOMIterator($node->bodyDom), RecursiveIteratorIterator::SELF_FIRST );
+    foreach($iter as $dom_element) {
+      insert_blankline($dom_element);
+    }
+  }
+
+  $range = $anno->ranges[0];
+  // Structure of $range: array('start' => 'XPath value', 'startOffset' => int, 'end' => 'XPath value', 'endOffset' => int).
+  // Assumption: character indexes indicate the first character that belongs, and the first that no longer belongs to the range.
+
+  // Change the saved Xpath expressions to accommodate the artificial "single outer tag" added above, and the html and body tags 
+  // added by DOMDocument::loadHTML().
+  $range['start'] = "/html/body/div[1]{$range['start']}";
+  $range['end'] = "/html/body/div[1]{$range['end']}";
+
+  if ($position == ANNOTATION_START) {
+    return index_at_xpath($node->bodyDom, $range['start']) + $range['startOffset'];
+  }
+  elseif ($position == ANNOTATION_END) {
+    return index_at_xpath($node->bodyDom, $range['end']) + $range['endOffset'];
+  }
+  else {
+    return FALSE;
+  }
+}
+
+/**
+ * Export all annotations of the specified user to the specified file.
+ *
+ * @return TRUE on success, FALSE in error cases.
+ *
+ * @see RQDA database schema docs: http://www.inside-r.org/packages/cran/RQDA/docs/RQDATables
+ */
+function annotation_export_rqda($uid, $filename) {
+  global $base_url; 
+
+  watchdog('annotation', 'Starting to export annotations.');
+  $user = user_load($uid);
+
+  // Initialze the target file with the database schema.
+  $db = new SQLite3($filename);
+  annotation_create_rqda_schema($db);
+
+  // Variable to collect the length of metadata prepended to content.
+  $prefix_length = array();
+
+
+  // Collect all nodes which the specified user has annotated.
+  $nids = annotation_nids($uid);
+
+  // Export all nodes which the specified user has annotated.
+  // Content goes into so-called RQDA files (table "source").
+  $db->exec('BEGIN TRANSACTION');  // Avoids implicit transaction (disk IO ops!) after every INSERT below.
+  foreach ($nids as $nid) {
+    $node = node_load($nid);
+
+    // Ensure that the exporting user has still view permission for this node.
+    if (!node_access('view', $node, $user)) {
+      continue;
+    }
+
+    // watchdog('annotation', "Debug: Exporting node with Drupal nid {$node->nid}.");
+
+    // Obtain the node body field as HTML.
+    $node_text = '';
+    $node_dom = new DOMDocument;
+    $node_html = field_get_items('node', $node, 'body')[0]['value'];
+    $success = $node_dom->loadHTML("<div>$node_html</div>"); // DOMDocument needs exactly one outer tag, so we make it so. 
+    //   See http://stackoverflow.com/a/12806767/1270008 .
+    // Bad success also happens for warnings (already generating their own log entries), so proceed if meaningful.
+    if ($success === FALSE and $node_dom->childNodes->length === 0) {
+      $message = "Could not create DOM object for node {$node->nid}.";
+      drupal_set_message($message, 'error');
+      watchdog('annotation', $message, array(), WATCHDOG_ERROR);
+      return FALSE;
+    }
+
+    // Convert the node body field from HTML to plain text.
+    $iter = new RecursiveIteratorIterator( new RecursiveDOMIterator($node_dom), RecursiveIteratorIterator::SELF_FIRST );
+    foreach($iter as $dom_element) {
+      insert_blankline($dom_element);
+      $node_text .= dom_element_text($dom_element);
+    }
+    $node_text = str_replace("'", "''", $node_text); // Escape quotes for SQLite.
+
+    // Create the prefix text with metadata.
+    $node_preface = "Content Title: {$node->title}" . PHP_EOL .
+      "Content ID: node $nid" . PHP_EOL . 
+      "Content Link: " . url("node/$nid", array('absolute' => TRUE, 'alias' => TRUE)) . PHP_EOL . 
+      "Author Name: " . user_load($node->uid)->name . PHP_EOL .
+      "Author Link: " . url("user/{$node->uid}", array('absolute' => TRUE, 'alias' => TRUE)) . PHP_EOL . PHP_EOL;
+    // $node_preface = ""; // Debug variant.
+    $prefix_length[$nid] = strlen(utf8_decode($node_preface)); // utf8_decode() makes multibyte characters count as one by replacing with "?".
+    $node_preface = str_replace("'", "''", $node_preface); // Escape quotes for SQLite. 
+    //  Must be done after counting its length, as it only affects the literal, not string indexes once inside SQLite.
+
+    $node_text = $node_preface . $node_text;
+
+    // Obtain the node title field content.
+    // TODO Test for the case that the core title field is used (called "field_title"), rather than the Field API's replacement "title_field".
+    $node_title = field_get_items('node', $node, 'title_field')[0]['value'];
+    $node_title = str_replace("'", "''", $node_title); // Escape quotes for SQLite.
+
+    // Obtain the node updated field content and convert it as needed by SQLite3.
+    $node_date = date('Y-m-d H:i:s', $node->changed);
+
+    // Write the SQLite record for this ethnographic "file".
+    // (Column "status = 1" means standard status, "status = 0" means temp deleted.)
+    $db->exec("INSERT INTO source (name, id, file, owner, date, status) VALUES ( 
+      '$node_title', '{$node->nid}', '$node_text', '{$user->name}', '$node_date', '1' )");
+  }
+  $db->exec('COMMIT TRANSACTION');
+
+
+  // Collect all annotation tags owned by the specified user (used or unused).
+  $tids = annotation_tids($uid);
+
+  // Export all annotation tags created by the specified user.
+  $db->exec('BEGIN TRANSACTION');  // Avoids implicit transaction (disk IO ops!) after every INSERT below.
+  foreach ($tids as $tid) {
+    $tag = taxonomy_term_load($tid);
+    watchdog('annotation', "Debug: Exporting tag with Drupal tid {$tag->tid}.");
+
+    $tag_name = str_replace("'", "''", $tag->name); // Escape quotes for SQLite.
+    $tag_description = drupal_html_to_text($tag->description);
+    $tag_description = str_replace("'", "''", $tag_description); // Escape quotes for SQLite.
+
+    // Write the SQLite record for this ethnographic "code".
+    // Column "status = 1" means standard status, "status = 0" means temp deleted.
+    $db->exec("INSERT INTO freecode (name, memo, owner, id, status) VALUES ( 
+      '$tag_name', '$tag_description', '{$user->name}', '{$tag->tid}', '1' )");
+  }
+  $db->exec('COMMIT TRANSACTION');
+
+
+  // Collect all annotations created by the specified user.
+  $aids = annotation_ids($uid);
+
+  // Export all annotations created by the specified user.
+  $annotations = entity_load_multiple_by_name('annotation', $aids);
+  $db->exec('BEGIN TRANSACTION');  // Avoids implicit transaction (disk IO ops!) after every INSERT below.
+  foreach ($annotations as $aid => $anno) {
+    // Reload the node if the new annotation belongs to a different one.
+    // $annotations is ordered by node affiliation, see annotation_ids(). So every annotated node is loaded only once.
+    if ($anno->nid != $node->nid) {
+      $node = node_load($anno->nid);
+    }
+
+    $anno_start_index = annotation_index($node, $anno, ANNOTATION_START);
+    if ($anno_start_index === FALSE) {
+      $message = "Could not export annotation with ID $aid: Could not determine character index for its start.";
+      watchdog('annotation', $message, array(), WATCHDOG_ERROR);
+      drupal_set_message($message, 'warning');
+      continue;
+    }
+    $anno_start_index += $prefix_length[$node->nid];
+
+    $anno_end_index = annotation_index($node, $anno, ANNOTATION_END);
+    if ($anno_end_index === FALSE) {
+      $message = "Could not export annotation with ID $aid: Could not determine character index for its end.";
+      watchdog('annotation', $message, array(), WATCHDOG_ERROR);
+      drupal_set_message($message, 'warning');
+      continue;
+    }
+    $anno_end_index += $prefix_length[$node->nid];
+
+    $anno_quote = str_replace("'", "''", $anno->quote); // Escape quotes for SQLite.
+    $anno_comment  = str_replace("'", "''", $anno->text);  // Escape quotes for SQLite.
+    $anno_date = date('Y-m-d H:i:s', $anno->updated);
+
+    // Write the SQLite record for this ethnographic "coding".
+    // (Column "status = 1" means standard status, "status = 0" means deleted.)
+    $db->exec("INSERT INTO coding (cid, fid, seltext, selfirst, selend, status, owner, date, memo) VALUES (
+      '{$anno->tid}', '{$anno->nid}', '$anno_quote', '$anno_start_index', '$anno_end_index', 
+      1, '{$user->name}', '$anno_date', '{$anno_comment}' )");
+    watchdog('annotation', "Exported annotation {$anno->id}.");
+  }
+  $db->exec('COMMIT TRANSACTION');
+
+  watchdog('annotation', 'Finished exporting annotations.');
+  return TRUE;
+}
+
