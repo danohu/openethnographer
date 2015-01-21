@@ -108,30 +108,31 @@ function annotation_schema() {
 /**
  * Implements hook_install().
  */
-function annotation_install(){
+function annotation_install() {
 
-  // Create a taxonomy vocabulary for annotation tags
+  // Create a taxonomy vocabulary for annotation tags.
   $existing = taxonomy_vocabulary_machine_name_load('openethnographer');
   if(!$existing){
-	$vocab = new stdClass();
-	$vocab->name = "Open Ethnographer";
-	$vocab->machine_name = 'openethnographer';
-	$vocab->description = 'Annotation classifications added by Open Ethnographer users';
-	taxonomy_vocabulary_save($vocab);
+    $vocab = new stdClass();
+    $vocab->name = "Open Ethnographer";
+    $vocab->machine_name = 'openethnographer';
+    $vocab->description = 'Annotation classifications added by Open Ethnographer users';
+    taxonomy_vocabulary_save($vocab);
 	}
 
-  // add uid (for author) to taxonomy term
+  // Add uid field (for author) to taxonomy terms.
   db_add_field('taxonomy_term_data', 'uid',
-               array( // field details
-                   'type' => 'int',
-                   'not null' => false, # we need to deal with deleted users, right?
-                   'default' => null,
-                   'description' => 'User who created this taxonomy term',
-               ),
-               array( // options
-                   'indexes' => array(
-                       'uid' => array('uid'))
-               ));
+    array( // field details
+      'type' => 'int',
+      'not null' => false, # we need to deal with deleted users, right?
+      'default' => null,
+      'description' => 'User who created this taxonomy term',
+    ),
+    array( // options
+      'indexes' => array(
+      'uid' => array('uid'))
+    )
+  );
 }
 
 
@@ -147,12 +148,15 @@ function annotation_uninstall() {
 
 /**
  * Implements hook_schema_alter().
+ *
+ * Records the addition of the uid field to taxonomy terms, see annotation_install().
  */
-function annotation_schema_alter(&$schema){
-    $schema['taxonomy_term_data']['fields']['uid'] = array(
-        'type' => 'int',
-        'not null' => false, # we need to deal with deleted users, right?
-        'default' => null,
-        'description' => 'User who created this taxonomy term',
-    );
+function annotation_schema_alter(&$schema) {
+  $schema['taxonomy_term_data']['fields']['uid'] = array(
+    'type' => 'int',
+    'not null' => false, # we need to deal with deleted users, right?
+    'default' => null,
+    'description' => 'User who created this taxonomy term',
+  );
 }
+
