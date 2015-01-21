@@ -109,6 +109,8 @@ function annotation_schema() {
  * Implements hook_install().
  */
 function annotation_install(){
+
+  // Create a taxonomy vocabulary for annotation tags
   $existing = taxonomy_vocabulary_machine_name_load('openethnographer');
   if(!$existing){
 	$vocab = new stdClass();
@@ -117,6 +119,19 @@ function annotation_install(){
 	$vocab->description = 'Annotation classifications added by Open Ethnographer users';
 	taxonomy_vocabulary_save($vocab);
 	}
+
+  // add uid (for author) to taxonomy term
+  db_add_field('taxonomy_term_data', 'uid',
+               array( // field details
+                   'type' => 'int',
+                   'not null' => false, # we need to deal with deleted users, right?
+                   'default' => null,
+                   'description' => 'User who created this taxonomy term',
+               ),
+               array( // options
+                   'indexes' => array(
+                       'uid' => array('uid'))
+               ));
 }
 
 
@@ -125,4 +140,19 @@ function annotation_install(){
  */
 function annotation_uninstall() {
   variable_del('annotator_store');
+
+  db_drop_field('taxonomy_term_data', 'uid');
+}
+
+
+/**
+ * Implements hook_schema_alter().
+ */
+function annotation_schema_alter(&$schema){
+    $schema['taxonomy_term_data']['fields']['uid'] = array(
+        'type' => 'int',
+        'not null' => false, # we need to deal with deleted users, right?
+        'default' => null,
+        'description' => 'User who created this taxonomy term',
+    );
 }

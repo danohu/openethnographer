@@ -5,11 +5,14 @@
  */
 class TagsAnnotatorPlugin extends AnnotatorPlugin {
   public function setup() {
+    global $user;
     $vid = taxonomy_vocabulary_machine_name_load('openethnographer')->vid;
     $tags = array(); 
     $term_tree = taxonomy_get_tree($vid);
     foreach($term_tree as $term){
-      $tags[] = $term->name;
+      if($term->uid == $user->uid){
+        $tags[] = $term->name;
+      }
     }
     drupal_add_js(array('autocomplete_terms' => $tags), 'setting');
 

@@ -260,11 +260,17 @@ function annotation_api_from_stdin() {
  *   tag will be created and returned.
  * @return The tag object, is found or created. Else, NULL.
  */
-function get_tag($tagarr, $should_create){
+function get_tag($tagarr, $should_create, $uid){
     if(!$tagarr) return NULL;
     $tagtext = $tagarr[0];    
     $vocabulary_name = 'openethnographer';
     $tags = taxonomy_get_term_by_name($tagtext, $vocabulary_name);
+    // only consider this user's tags
+    $tags = array_filter(tags, 
+              function($tag){
+                global $user;
+                return $tag->uid == $user->uid;
+              });
     if($tags){
         // Multiple results are possible due to case insensitive search on the trimmed name.
         // But ignored as tags are created below only if they'll be the only result.
@@ -272,11 +278,13 @@ function get_tag($tagarr, $should_create){
     }
     if($should_create){
         // PRE: $tagtext is unique in this vocab, as else a tag would've been returned above.
-        // (We have to ensure unique tag naming, as Annotator uses names as IDs.) 
+        // (We have to ensure unique tag naming, as Annotator uses names as IDs.)
+        global $user;
         $tag = new stdClass();
         $tag->name = $tagtext;
         $vocabulary = taxonomy_vocabulary_machine_name_load($vocabulary_name);
         $tag->vid = $vocabulary->vid;
+        $tag->uid = $user->uid;
         taxonomy_term_save($tag);
         return $tag;
     }
