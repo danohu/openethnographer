@@ -121,6 +121,8 @@ function annotation_install() {
 	}
 
   // Add uid field (for author) to taxonomy terms.
+  //   (This is not a Field UI field, so not visible at /admin/structure/taxonomy/openethnographer/fields. Instead, it is an 
+  //   internal field similar to node and comment creation date. This is needed to prevent permission cheating by users editing it.)
   db_add_field('taxonomy_term_data', 'uid',
     array( // field details
       'type' => 'int',

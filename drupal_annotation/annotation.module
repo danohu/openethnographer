@@ -499,6 +499,7 @@ function annotation_tids($uid) {
   $result = $query
     ->fields('terms', array('tid'))
     ->condition('vid', $vocabulary->vid, '=')
+    ->condition('uid', $uid, '=')
     ->orderBy('tid')
     ->execute()
     ->fetchCol(0);
@@ -508,11 +509,20 @@ function annotation_tids($uid) {
 /**
  * Obtain the IDs of all annotations which are created by the specified user.
  */
-function annotation_ids($uid){
+function annotation_ids($uid) {
+  // Create a subquery to exclude tags not owned by the user.
+  $vocabulary = taxonomy_vocabulary_machine_name_load('openethnographer');
+  $own_tids = db_select('taxonomy_term_data', 'terms')
+    ->fields('terms', array('tid'))
+    ->condition('vid', $vocabulary->vid, '=')
+    ->condition('uid', $uid, '=');
+
+  // Create and run the main query.
   $query = db_select('annotation', 'anno');
   $result = $query
     ->fields('anno', array('id'))
     ->condition('uid', $uid, '=')
+    ->condition('tid', $own_tids , 'IN')
     ->orderBy('nid') // So when traversing the result, nodes are only reloaded when needed.
     ->execute()
     ->fetchCol(0);
