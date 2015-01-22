@@ -248,14 +248,14 @@ function annotation_menu() {
 
   // Menu items for the annotation API.
 
-  // Index; API endpoint
+  // Index; API endpoint to list annotations.
   $items['annotation/api'] = array(
     'page callback' => 'annotation_api',
     'access callback' => /*'annotation_method_access'*/TRUE,
     'type' => MENU_CALLBACK,
     'file' => 'annotation.store.inc',
   );
-  // Create; API endpoint to create annotations
+  // Create; API endpoint to create annotations.
   $items['annotation/api/annotations'] = array(
     'page callback' => 'annotation_api_endpoint',
     'access callback' => /*'annotation_method_access'*/TRUE,
@@ -263,7 +263,7 @@ function annotation_menu() {
     'type' => MENU_CALLBACK,
     'file' => 'annotation.store.inc',
   );
-  // View / Edit / Delete; API endpoint to update an existing annotation
+  // View / Edit / Delete; API endpoint to operate on an existing annotation.
   $items['annotation/api/annotations/%'] = array(
     'page callback' => 'annotation_api_endpoint',
     'page arguments' => array(3),
@@ -272,10 +272,10 @@ function annotation_menu() {
     'type' => MENU_CALLBACK,
     'file' => 'annotation.store.inc',
   );
-  // Search; API endpoint to searh in existing annotations
+  // Search; API endpoint to search in existing annotations.
   $items['annotation/api/search'] = array(
     'page callback' => 'annotation_api_search',
-//    'access callback' => 'annotation_access',
+//  'access callback' => 'annotation_access',
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
     'file' => 'annotation.store.inc',
@@ -316,7 +316,7 @@ function annotation_access($op, $entity, $account = NULL, $entity_type = NULL) {
 }
 
 /**
- * Method dependent access callback
+ * Method dependent access callback.
  * @see annotation_api_endpoint()
  */
 function annotation_entity_method_access($op, $entity_type, $entity = NULL, $account = NULL) {

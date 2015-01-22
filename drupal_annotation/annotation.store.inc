@@ -235,9 +235,9 @@ function annotation_api_search() {
  */
 function annotation_api_from_stdin() {
   $json = '';
-  // PUT data comes in on the stdin stream
-  $put = fopen('php://input', 'r');
-  // Read the data 1 KB at a time and write to the file
+  $put = fopen('php://input', 'r'); // PUT data comes in on the stdin stream.
+
+  // Read the data, 1 kB at a time, and write it to the file.
   while ($chunk = fread($put, 1024)) {
     $json .= $chunk;
   }
@@ -249,59 +249,63 @@ function annotation_api_from_stdin() {
 }
 
 /**
- * Get Drupal taxonomy term objects based on tag names.
+ * Get a Drupal taxonomy term object from a tag (taxonomy term) name.
  *
- * Notes are treated case-insensitive and ignoring leading and trailing whitespace, 
- * as per https://api.drupal.org/api/function/taxonomy_get_term_by_name
- * NOTE, currently only the first tag name is evaluated.
+ * Finds and returns the first matching taxonomy term object matching the first supplied tag name. (Only the first 
+ * supplied tag name is evaluated, all others are ignored!)
  *
- * @param tagarr Array Array of strings with tag names.
+ * @param tagarr Array Numeric array, values being tag name strings. Names are treated case-insensitive and ignoring leading 
+ *   and trailing whitespace, as per https://api.drupal.org/api/function/taxonomy_get_term_by_name .
  * @param should_create Boolean If true and a tag by the same name does not exist yet, the 
  *   tag will be created and returned.
- * @return The tag object, is found or created. Else, NULL.
+ * @param $uid ID of the user who must be the owner of the named tag. NULL to not filter by user.
+ * @return The tag object, if found or created. Else, NULL.
  */
-function get_tag($tagarr, $should_create, $uid){
-    if(!$tagarr) return NULL;
-    $tagtext = $tagarr[0];    
-    $vocabulary_name = 'openethnographer';
-    $tags = taxonomy_get_term_by_name($tagtext, $vocabulary_name);
-    // only consider this user's tags
-    $tags = array_filter(tags, 
-              function($tag){
-                global $user;
-                return $tag->uid == $user->uid;
-              });
-    if($tags){
-        // Multiple results are possible due to case insensitive search on the trimmed name.
-        // But ignored as tags are created below only if they'll be the only result.
-        return array_values($tags)[0]; 
-    }
-    if($should_create){
-        // PRE: $tagtext is unique in this vocab, as else a tag would've been returned above.
-        // (We have to ensure unique tag naming, as Annotator uses names as IDs.)
-        global $user;
-        $tag = new stdClass();
-        $tag->name = $tagtext;
-        $vocabulary = taxonomy_vocabulary_machine_name_load($vocabulary_name);
-        $tag->vid = $vocabulary->vid;
-        $tag->uid = $user->uid;
-        taxonomy_term_save($tag);
-        return $tag;
-    }
-    else{
-        return NULL;
-    }
+function get_tag($tagarr, $should_create, $uid=NULL) {
+  if (!$tagarr) return NULL;
+  $tag_name = $tagarr[0];    
+  $vocabulary_name = 'openethnographer';
+  $tags = taxonomy_get_term_by_name($tag_name, $vocabulary_name);
+
+  // If the uid filter parameter is given, only consider the tags of the specified user.
+  // (The PHP closure technique needs PHP 5.3+; see http://stackoverflow.com/a/10712844/1270008 )
+  if ($uid != NULL) {
+    $tags = array_filter($tags, function($tag) use($uid) { return $tag->uid == $uid; });
+  }
+
+  if ($tags) {
+    // Multiple results are possible due to case insensitive search on the trimmed name.
+    // But ignored as tags are created below only if they'll be the only result.
+    return array_values($tags)[0]; 
+  }
+
+  if ($should_create) {
+    // PRE: $tagtext is unique in this vocab, as else a tag would've been returned above.
+    // (We have to ensure unique tag naming, as Annotator uses names as IDs.)
+    global $user;
+    $tag = new stdClass();
+    $tag->name = $tag_name;
+    $vocabulary = taxonomy_vocabulary_machine_name_load($vocabulary_name);
+    $tag->vid = $vocabulary->vid;
+    $tag->uid = $user->uid;
+    taxonomy_term_save($tag);
+    return $tag;
+  }
+  else {
+    return NULL;
+  }
 }
 
 /**
- * Prepare entity for api usage
+ * Prepare entity for API usage.
  *
  * Necessary because the data provided by a client (like the Annotator JS library) can differ from 
  * proper Drupal annotation entity objects, so these differences have to be fixed first.
  */
 function annotation_api_entity_prepare($entity, $op) {
-  switch($op) {
+  switch ($op) {
     case 'read':
+      // Convert author representation. Drupal uses $entity->uid but Annotator JS expects a descriptive array.
       $account = user_load($entity->uid);
       $entity->user = array(
         'uid' => $account->uid,
@@ -311,7 +315,7 @@ function annotation_api_entity_prepare($entity, $op) {
       unset($entity->uid);
 
       $tag = taxonomy_term_load($entity->tid);
-      if($tag) $entity->tags = array($tag->name);
+      if ($tag) $entity->tags = array($tag->name);
       // unset($entity->tid); // TODO Probably to activate, as Annotator should know tags only by name. But has to be tested.
 
       $entity->links[] = array(
@@ -320,21 +324,25 @@ function annotation_api_entity_prepare($entity, $op) {
         'type' => 'text/html',
       );
       break;
+
     case 'create':
-      $entity->uid = $entity->user;
+      $entity->uid = $entity->user; // TODO Isn't Annotator JS using an associative array as in the 'read' case?
       unset($entity->user);
 
-      // Tags are given by tag name due to auto-completion, but annotation entities need a Drupal Taxonomy term ID (tid).
-      $tag = get_tag($entity->tags, TRUE);
+      // The tag is given by name (coming from auto-completion), but annotation entities need a Drupal Taxonomy term ID (tid).
+      $tag = get_tag($entity->tags, TRUE, $entity->uid);
       $entity->tid = is_null($tag) ? NULL : $tag->tid;
       unset($entity->tag);
       break;
+
     case 'update':
       unset($entity->user);
-      // Tags are given by tag name due to auto-completion, but annotation entities need a Drupal Taxonomy term ID (tid).
-      $tag = get_tag($entity->tags, TRUE);
+
+      // The tag is given by name (coming from auto-completion), but annotation entities need a Drupal Taxonomy term ID (tid).
+      $tag = get_tag($entity->tags, TRUE, $entity->uid); // Uses the original annotation author's UID, which is correct. Not current user's!
       $entity->tid = is_null($tag) ? NULL : $tag->tid;
       unset($entity->tag);
+      break;
   }
   return $entity;
 }
