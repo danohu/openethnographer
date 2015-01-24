@@ -81,7 +81,7 @@ class AnnotationAPIController extends EntityAPIController {
 
     if ($entity->tid != NULL) {
       $term = taxonomy_term_load($entity->tid);
-      $term_markup = l($term->name, "taxonomy/term/$term->tid") . " (tid: $term->tid)";
+      $term_markup = l($term->name, "taxonomy/term/{$term->tid}") . " (tid: {$term->tid})";
     }
     else { 
       $term_markup = '';
@@ -110,22 +110,18 @@ class AnnotationAPIController extends EntityAPIController {
   }
 }
 
-function get_properties($obj, $values=false)
-{
-    $obj_dump  = print_r($obj, 1);
-    $matches =  array();
-    preg_match_all('/^\s+\[(\w+).*\] => (\w*)/m', $obj_dump, $matches);
-    if ($values)
-    {
-        $output = array();
-        foreach ($matches[1] as $key => $property)
-        {
-            $output[$property] = $matches[2][$key];
-        }
-        return $output;
+function get_properties($obj, $values=false) {
+  $obj_dump  = print_r($obj, 1);
+  $matches =  array();
+  preg_match_all('/^\s+\[(\w+).*\] => (\w*)/m', $obj_dump, $matches);
+  if ($values) {
+    $output = array();
+    foreach ($matches[1] as $key => $property) {
+      $output[$property] = $matches[2][$key];
     }
-    else
-    {
-        return $matches[1];
-    }
+    return $output;
+  }
+  else {
+    return $matches[1];
+  }
 }

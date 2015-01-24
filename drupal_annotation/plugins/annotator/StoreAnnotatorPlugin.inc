@@ -9,4 +9,3 @@ $plugin = array(
     'class' => 'StoreAnnotatorPlugin',
   ),
 );
-

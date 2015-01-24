@@ -1,5 +1,6 @@
 (function ($) {
   Drupal.behaviors.annotatorStore = {
+	  
     attach: function (context, settings) {
       Drupal.Annotator.annotator('addPlugin', 'Store', {
         prefix: settings.annotator_store.prefix,
@@ -10,11 +11,12 @@
           'type': 'annotator'
         },
         loadFromSearch: function(that){
-	    	  return {
-			      'nid': jQuery(that.element).parents('.node').attr('id').split('-')[1]
+          return {
+            'nid': jQuery(that.element).parents('.node').attr('id').split('-')[1]
           };
-	      },
+	    },
       });
     }
+    
   };
 })(jQuery);
