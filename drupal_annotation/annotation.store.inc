@@ -168,7 +168,6 @@ function annotation_api_search() {
   $updated = isset($_GET['updated']) ? $_GET['updated']    : NULL;
   $text    = isset($_GET['text'])    ? $_GET['text']       : NULL;
   $quote   = isset($_GET['quote'])   ? $_GET['quote']      : NULL;
-  $uri     = isset($_GET['uri'])     ? $_GET['uri']        : NULL;
   $nid     = isset($_GET['nid'])     ? $_GET['nid']        : NULL;
 
   // Initiate query
@@ -177,7 +176,7 @@ function annotation_api_search() {
 
   // Add conditions to query
   if ($id) {
-    $query->propertyCondition('uri', $id);
+    $query->propertyCondition('id', $id);
   }
   if ($uid) {
     // Use uid instead of user
@@ -194,9 +193,6 @@ function annotation_api_search() {
   }
   if ($quote) {
     $query->propertyCondition('quote', $quote, 'LIKE');
-  }
-  if ($uri) {
-    $query->propertyCondition('uri', $uri);
   }
   if ($nid) {
     $query->propertyCondition('nid', $nid);

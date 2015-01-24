@@ -51,13 +51,6 @@ function annotation_schema() {
         'size' => 'big',
         'not null' => TRUE,
       ),
-      'uri' => array(
-        'description' => 'Type uri of this annotation.',
-        'type' => 'varchar',
-        'length' => 2048, // Maximum URLs length.
-        'not null' => FALSE, // Locations can alternatively be identified by entity ID.
-        'sortable' => TRUE
-      ),
       'ranges' => array(
         'description' => 'The ranges of the annotation.',
         'type' => 'blob',

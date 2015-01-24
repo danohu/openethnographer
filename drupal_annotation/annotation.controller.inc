@@ -44,7 +44,7 @@ class AnnotationAPIController extends EntityAPIController {
       ),
       '#formatter' => 'text_default',
       0 => array(
-        '#markup' => '<blockquote cite="' . check_plain($entity->uri) . '">' . check_plain($entity->quote) . '</blockquote>'
+        '#markup' => '<blockquote cite="' . url("node/{$entity->nid}") . '">' . check_plain($entity->quote) . '</blockquote>'
       )
     );
     $content['text'] = array(
