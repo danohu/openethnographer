@@ -480,10 +480,10 @@ function annotation_nids($uid) {
   $query = db_select('annotation', 'anno');
   $result = $query
     ->distinct()
-    ->fields('anno', array('nid'))
+    ->fields('anno', array('entity_id'))
     ->condition('uid', $uid, '=')
     ->isNotNull('tid')
-    ->orderBy('nid')
+    ->orderBy('entity_id')
     ->execute()
     ->fetchCol(0);
   return $result;
@@ -508,6 +508,9 @@ function annotation_tids($uid) {
 
 /**
  * Obtain the IDs of all annotations which are created by the specified user.
+ *
+ * TODO The current implementation returns all translations / language versions of these annotations. 
+ *   There should be an option to filter by language version.
  */
 function annotation_ids($uid) {
   // Create a subquery to exclude tags not owned by the user.
@@ -523,7 +526,7 @@ function annotation_ids($uid) {
     ->fields('anno', array('id'))
     ->condition('uid', $uid, '=')
     ->condition('tid', $own_tids , 'IN')
-    ->orderBy('nid') // So when traversing the result, nodes are only reloaded when needed.
+    ->orderBy('entity_id') // So when traversing the result, nodes are only reloaded when needed.
     ->execute()
     ->fetchCol(0);
 
@@ -880,4 +883,3 @@ function annotation_export_rqda($uid, $filename) {
   watchdog('annotation', 'Finished exporting annotations.');
   return TRUE;
 }
-

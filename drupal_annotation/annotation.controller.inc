@@ -34,6 +34,7 @@ class AnnotationAPIController extends EntityAPIController {
       '#access' => TRUE,
       '#label_display' => 'above',
       '#view_mode' => 'full',
+      // TODO The language of the quote has to be sourced from the annotation.field_language column.
       '#language' => LANGUAGE_NONE,
       '#field_name' => 'field_fake_quote',
       '#field_type' => 'text',
@@ -44,7 +45,7 @@ class AnnotationAPIController extends EntityAPIController {
       ),
       '#formatter' => 'text_default',
       0 => array(
-        '#markup' => '<blockquote cite="' . url("node/{$entity->nid}") . '">' . check_plain($entity->quote) . '</blockquote>'
+        '#markup' => '<blockquote cite="' . url("{$entity->entity_type}/{$entity->entity_id}") . '">' . check_plain($entity->quote) . '</blockquote>'
       )
     );
     $content['text'] = array(
@@ -54,6 +55,7 @@ class AnnotationAPIController extends EntityAPIController {
       '#access' => TRUE,
       '#label_display' => 'above',
       '#view_mode' => 'full',
+      // TODO The language of the annotation's text has to be sourced from annotation.language column, once in use.
       '#language' => LANGUAGE_NONE,
       '#field_name' => 'field_fake_text',
       '#field_type' => 'text',
@@ -67,6 +69,8 @@ class AnnotationAPIController extends EntityAPIController {
         '#markup' => check_plain($entity->text)
       )
     );
+
+    // TODO Why is this disabled? Enable if adequate.
     // $content['author'] = array(
     //   '#markup' => t('Created by: @author on @date at !uri', array(
     //     '@author' => $wrapper->user->name->value(array('sanitize' => TRUE)),
@@ -77,8 +81,8 @@ class AnnotationAPIController extends EntityAPIController {
     // $user = $wrapper->user->name->value();
     // dsm(get_properties($wrapper));
     // dsm($user);
-    // TODO Add the following only if Annotator's "Tags" plugin is enabled at /admin/config/content/annotator.
 
+    // TODO Make the following code conditional of the Annotator's "Tags" plugin being enabled.
     if ($entity->tid != NULL) {
       $term = taxonomy_term_load($entity->tid);
       $term_markup = l($term->name, "taxonomy/term/{$term->tid}") . " (tid: {$term->tid})";

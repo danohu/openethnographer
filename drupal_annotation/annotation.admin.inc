@@ -83,9 +83,14 @@ function annotation_admin_content($form, $form_state) {
   $header = array(
     'id' => array('data' => t('ID'), 'field' => 'a.id', 'sort' => 'asc'),
     'type' => array('data' => t('Type'), 'field' => 'a.type'),
-    'nid' => array('data' => t('Node ID'), 'field' => 'a.nid'),
+    'entity_type' => array('data' => t('Entity Type'), 'field' => 'a.entity_type'),
+    'entity_id' => array('data' => t('Entity ID'), 'field' => 'a.entity_id'),
+    //'field_name' => array('data' => t('Field Name'), 'field' => 'a.field_name'), // Enable on demand.
+    //'field_delta' => array('data' => t('Field Delta'), 'field' => 'a.field_delta'), // Enable on demand.
+    //'field_language' => array('data' => t('Field Language'), 'field' => 'a.field_language'),  // Enable on demand.
     'quote' => array('data' => t('Quote'), 'field' => 'a.quote'),
     'text' => array('data' => t('Text'), 'field' => 'a.text'),
+    //'language' => array('data' => t('Language'), 'field' => 'a.language'), // Language version of annotation itself. Unused so far.
     'tid' => array('data' => t('Tag ID'), 'field' => 'a.tid'),
     'author' => t('Author'),
     'timestamp' => array('data' => t('Updated'), 'field' => 'a.updated'),
@@ -114,9 +119,14 @@ function annotation_admin_content($form, $form_state) {
     $options[$annotation->id] = array(
       'id' => $annotation->id,
       'type' => $annotation_type->label,
-      'nid' => $annotation->nid,
+      'entity_type' => $annotation->entity_type,
+      'entity_id' => $annotation->entity_id,
+      //'field_name' => $annotation->field_name, // Enable on demand.
+      //'field_delta' => $annotation->field_delta, // Enable on demand.
+      //'field_language' => $annotation->field_language, // Enable on demand.
       'quote' => $annotation->quote,
       'text' => $annotation->text,
+      // 'language' => $annotation->language, // Language version of annotation itself. Unused so far.
       'tid' => $annotation->tid != NULL ? l($annotation->tid, "taxonomy/term/$annotation->tid") : 'NULL',
       'author' => theme('username', array('account' => $accounts[$annotation->uid])),
       'timestamp' => format_date($annotation->updated, 'short'),

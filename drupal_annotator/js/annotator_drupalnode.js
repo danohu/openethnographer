@@ -28,7 +28,20 @@ Annotator.Plugin.DrupalNode = (function(_super) {
     this.annotator.subscribe(
       'annotationEditorSubmit', 
       function(editor, annotation) {
-        annotation.nid = editor.element.parents('.node').attr('id').split('-').slice(-1).pop();
+        // annotation.nid = editor.element.parents('.node').attr('id').split('-').slice(-1).pop(); // TODO Remove this original code.
+        annotation.entity_id = editor.element.parents('.node').attr('id').split('-').slice(-1).pop();
+        
+        // TODO Determine the entity type of the annotated content properly.
+        annotation.entity_type = 'node';
+        
+        // TODO Determine the field name of the annotated content properly.
+        annotation.field_name = 'body';
+        
+        // TODO Determine the field value index of the annotated content properly.
+        annotation.field_delta= '0';
+        
+        // TODO Determine the language version of the annotated field content properly.
+        annotation.field_language = 'en';
       }
     );
 
