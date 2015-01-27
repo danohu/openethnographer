@@ -496,6 +496,8 @@ class Annotator.Plugin.Store extends Annotator.Plugin
       when 404 then message = Annotator._t("Sorry we could not connect to the annotations store")
       when 500 then message = Annotator._t("Sorry something went wrong with the annotation store")
 
-    Annotator.showNotification message, Annotator.Notification.ERROR
+    # TODO Fix the below error display routine.
+    # Temporarily disabled b/c it does not work (error "TypeError: Annotator.showNotification is not a function").
+    # Annotator.showNotification message, Annotator.Notification.ERROR
 
     console.error Annotator._t("API request failed:") + " '#{xhr.status}'"
