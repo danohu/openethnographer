@@ -22,3 +22,5 @@ files[] = plugins/annotator/DrupalNodeAnnotatorPlugin.class.inc
 dependencies[] = ctools
 dependencies[] = jquery_update
 dependencies[] = libraries
+dependencies[] = taxonomy_display
+dependencies[] = annotation
