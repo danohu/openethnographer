@@ -954,3 +954,24 @@ function annotation_export_rqda($uid, $filename) {
   watchdog('annotation', 'Finished exporting annotations.');
   return TRUE;
 }
+
+function annotation_extract($entity, $len_before, $len_after){
+
+    $nd = node_load($entity->nid);
+    $txt = field_get_items('node', $nd, 'body')[0]['value'];
+    $hl_start = $entity->ranges[0]['startOffset'] + 1; 
+    $hl_end = $entity->ranges[0]['endOffset'] + 1;
+    $snippet_start = max(0, $hl_start - $len_before);
+    $pre_snippet = substr($txt, $snippet_start, $len_before);
+    $post_snippet = substr($txt, $hl_end, $len_after);
+    $hl_snippet = substr($txt, $hl_start, $hl_end - $hl_start);
+    $output = '<span class="annotator-extract-before">' . $pre_snippet . '</span><span class="annotator-extract-highlighted">' . $hl_snippet . '</span><span class="annotator-extract-after">' . $post_snippet . '</span>';
+    if ($entity->text != ""){
+        $comment_snippet = '<span class="annotator-extract-comment-wrapper">, who said  "<span class="annotator-extract-comment">' . $entity->text . '</span>" </span>';
+    }
+    else { $comment_snippet = ""; }
+    $author = user_load($entity->uid);
+    $author_snippet = '<div class="annotator-extract-author-wrapper">Tagged by  <a href="/user/' . $author->uid . '">' . $author->name . '</a>' . $comment_snippet . '</div>';
+    $wrapped = '<div class="annotator-annotation-block"> <div class="annotator-extract-wrapper">' . $output . '</div>' . $author_snippet .  '</div>';
+    return $wrapped;
+}
