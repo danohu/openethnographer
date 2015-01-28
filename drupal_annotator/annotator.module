@@ -147,3 +147,66 @@ function annotator_execute_plugins($annotation = NULL, $op = NULL) {
 function annotator_annotation_alter($entity, $op) {
   annotator_execute_plugins($entity, $op);
 }
+
+
+/**
+ * Implements hook_preprocess_field().
+ *
+ * This is the entry point for adding data attributes to a field's HTML output, which will mark the field 
+ * as "to be annotated", and will make it get an Annotator instance. The rendering of the HTML attribute arrays 
+ * built here is done by Drupal core's theme_field() (which also adds some hard-coded attributes), or in most 
+ * cases by an overwritten version of theme_field() in ones template. The overwritten version should work 
+ * too (except if buggy), as the $variables['item_attributes_array'] array modified below is a core concept.
+ *
+ * Note that the implementation below relies on a solution to Drupal Core issue #1940986. So either 
+ * increase this modules weight above zero, disable the RDF module (drush dis schemaorg rdf), or patch Drupal core.
+ * See https://www.drupal.org/node/1940986 .
+ *
+ * Inspired by and based on quickedit_preprocess_field() and example code by John Ferris (see below).
+ *
+ * @see theme_field() http://api.drupal.org/api/drupal/modules!field!field.module/function/theme_field/7
+ * @see quickedit_preprocess_field() https://www.drupal.org/project/quickedit
+ * @see John Ferris' example code http://atendesigngroup.com/blog/adding-css-classes-fields-drupal
+ */
+function annotator_preprocess_field(&$variables) {
+  $element = $variables['element'];
+
+  // Some fields might be rendered through theme_field() but are not Field API fields, e.g. Display Suite fields.
+  if (!empty($element['#skip_edit'])) {
+    return;
+  }
+
+  $entity_type = $element['#entity_type'];
+  $entity = $element['#object'];
+  $field_name = $element['#field_name'];
+  $language = $element['#language'];
+  // $bundle = $element['#bundle']; // Possible, but also possible via entity_extract_ids() below.
+  
+  list($id, $vid, $bundle) = entity_extract_ids($entity_type, $entity);
+
+  // TODO Check if annotations are enabed on this field, only proceed if.
+
+  /*
+  // TODO Add support for field-collection fields.
+  if ($entity_type === 'field_collection_item') {
+    $host_entity = field_collection_item_get_host_entity($element['#object']);
+
+    // Annotatability is configured on the host entity (the field collection) only, so has to be evaluated 
+    // when treating a constituent field (an entity of type field_collection_item) here. The data attribute 
+    // has to be set on constituent fields, as these get the Annotator instances.
+    if (!$host_entity->annotateable)) { // Pseudo code.
+      return;
+    }
+  }
+  */
+
+  // Provide the metadata through data-attributes.
+  //   To allow Annotator being used on multi-value fields, each field item ("value") has to get its own target ID 
+  //   so that it is found for establishing an Annotator instance.
+  foreach ($variables['items'] as $delta => $item) {
+    $variables['item_attributes_array'][$delta]['data-annotator-target'] = "$entity_type/$id/$field_name/$language/$delta";
+  }
+
+  // Possible variant that affects the whole field, not its items ("values").
+  // $variables['attributes_array']['data-annotator-target-id'] = "$entity_type/$id/$field_name/$language";
+}

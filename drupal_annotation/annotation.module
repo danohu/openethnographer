@@ -474,19 +474,29 @@ function annotation_export_submit() {
 }
 
 /**
- * Obtain the node IDs of all nodes annotated by the given user.
+ * Obtain the identifiers of all entities annotated by the given user.
+ *
+ * @return Associative array indexed by entity types, each containing a list (indexed array) of entity ids of 
+ *   content items that the given user has annotated. These lists are sorted ascendingly by value.
  */
-function annotation_nids($uid) {
+function annotation_annotated_content($uid) {
   $query = db_select('annotation', 'anno');
-  $result = $query
+  $results = $query
     ->distinct()
-    ->fields('anno', array('entity_id'))
+    ->fields('anno', array('entity_type', 'entity_id'))
     ->condition('uid', $uid, '=')
     ->isNotNull('tid')
+    ->orderBy('entity_type')
     ->orderBy('entity_id')
     ->execute()
-    ->fetchCol(0);
-  return $result;
+    ->fetchAll(PDO::FETCH_ASSOC);
+
+  $annotated_content = array();
+  foreach($results as $result) {
+    $annotated_content[ $result['entity_type'] ][] = (int) $result['entity_id'];
+  }
+
+  return $annotated_content;
 }
 
 /**
@@ -511,6 +521,9 @@ function annotation_tids($uid) {
  *
  * TODO The current implementation returns all translations / language versions of these annotations. 
  *   There should be an option to filter by language version.
+ * 
+ * @return Array of annotation IDs. IDs of annotations that annotate the same entity appear in a row, so when 
+ *   traversing them, each entity is only loaded once.
  */
 function annotation_ids($uid) {
   // Create a subquery to exclude tags not owned by the user.
@@ -526,7 +539,8 @@ function annotation_ids($uid) {
     ->fields('anno', array('id'))
     ->condition('uid', $uid, '=')
     ->condition('tid', $own_tids , 'IN')
-    ->orderBy('entity_id') // So when traversing the result, nodes are only reloaded when needed.
+    ->orderBy('entity_type')
+    ->orderBy('entity_id') // So when traversing the result, entities are only reloaded when needed.
     ->execute()
     ->fetchCol(0);
 
@@ -728,37 +742,24 @@ function annotation_index($node, $anno, $position){
 }
 
 /**
- * Export all annotations of the specified user to the specified file.
- *
- * @return TRUE on success, FALSE in error cases.
- *
- * @see RQDA database schema docs: http://www.inside-r.org/packages/cran/RQDA/docs/RQDATables
+ * Export the nodes with the given node IDs into the specified RQDA database.
+ * 
+ * Exporting is only done for those nodes for which the exporting user has view access. Node content, 
+ * like all content, goes into so-called RQDA files (table "source").
+ * 
+ * @return, Array of prefix text lengths created and exported with the node text. Indexed by node ID.
  */
-function annotation_export_rqda($uid, $filename) {
-  global $base_url; 
-
-  watchdog('annotation', 'Starting to export annotations.');
-  $user = user_load($uid);
-
-  // Initialze the target file with the database schema.
-  $db = new SQLite3($filename);
-  annotation_create_rqda_schema($db);
+function annotation_export_nodes($nids, $db, $exporting_user) {
 
   // Variable to collect the length of metadata prepended to content.
   $prefix_length = array();
 
-
-  // Collect all nodes which the specified user has annotated.
-  $nids = annotation_nids($uid);
-
-  // Export all nodes which the specified user has annotated.
-  // Content goes into so-called RQDA files (table "source").
   $db->exec('BEGIN TRANSACTION');  // Avoids implicit transaction (disk IO ops!) after every INSERT below.
   foreach ($nids as $nid) {
     $node = node_load($nid);
 
     // Ensure that the exporting user has still view permission for this node.
-    if (!node_access('view', $node, $user)) {
+    if (!node_access('view', $node, $exporting_user)) {
       continue;
     }
 
@@ -810,16 +811,28 @@ function annotation_export_rqda($uid, $filename) {
     // Write the SQLite record for this ethnographic "file".
     // (Column "status = 1" means standard status, "status = 0" means temp deleted.)
     $db->exec("INSERT INTO source (name, id, file, owner, date, status) VALUES ( 
-      '$node_title', '{$node->nid}', '$node_text', '{$user->name}', '$node_date', '1' )");
+      '$node_title', '{$node->nid}', '$node_text', '{$exporting_user->name}', '$node_date', '1' )");
   }
   $db->exec('COMMIT TRANSACTION');
 
+  return $prefix_length;
+}
 
-  // Collect all annotation tags owned by the specified user (used or unused).
-  $tids = annotation_tids($uid);
+/**
+ * Export the comments with the given comment IDs into the specified RQDA database.
+ * 
+ * Comment content, like all content, goes into so-called RQDA files (table "source").
+ */
+function annotation_export_comments($cids, $db, $exporting_user) {
+  // TODO Implementation.
+}
 
-  // Export all annotation tags created by the specified user.
+/**
+ * Export the tags with the given tag IDs into the specified RQDA database.
+ */
+function annotation_export_tags($tids, $db, $exporting_user) {
   $db->exec('BEGIN TRANSACTION');  // Avoids implicit transaction (disk IO ops!) after every INSERT below.
+
   foreach ($tids as $tid) {
     $tag = taxonomy_term_load($tid);
     watchdog('annotation', "Debug: Exporting tag with Drupal tid {$tag->tid}.");
@@ -828,57 +841,115 @@ function annotation_export_rqda($uid, $filename) {
     $tag_description = drupal_html_to_text($tag->description);
     $tag_description = str_replace("'", "''", $tag_description); // Escape quotes for SQLite.
 
-    // Write the SQLite record for this ethnographic "code".
+    // Write the SQLite record for this tag.
     // Column "status = 1" means standard status, "status = 0" means temp deleted.
-    $db->exec("INSERT INTO freecode (name, memo, owner, id, status) VALUES ( 
-      '$tag_name', '$tag_description', '{$user->name}', '{$tag->tid}', '1' )");
+    $db->exec(
+      "INSERT INTO freecode (name, memo, owner, id, status) " .
+      "VALUES ('$tag_name', '$tag_description', '{$exporting_user->name}', '{$tag->tid}', '1' )"
+    );
   }
+
   $db->exec('COMMIT TRANSACTION');
+}
 
+/**
+ * Export the given node annotation into the given RQDA database.
+ * 
+ * @param prefix_length Character count of metadata prepended to node content.
+ */
+function annotation_export_node_annotation($anno, $node, $prefix_length, $db, $exporting_user) {
+  $anno_start_index = annotation_index($node, $anno, ANNOTATION_START);
+  if ($anno_start_index === FALSE) {
+    $message = "Could not export annotation with ID $aid: Could not determine character index for its start.";
+    watchdog('annotation', $message, array(), WATCHDOG_ERROR);
+    drupal_set_message($message, 'warning');
+    continue;
+  }
+  $anno_start_index += $prefix_length;
 
-  // Collect all annotations created by the specified user.
-  $aids = annotation_ids($uid);
+  $anno_end_index = annotation_index($node, $anno, ANNOTATION_END);
+  if ($anno_end_index === FALSE) {
+    $message = "Could not export annotation with ID $aid: Could not determine character index for its end.";
+    watchdog('annotation', $message, array(), WATCHDOG_ERROR);
+    drupal_set_message($message, 'warning');
+    continue;
+  }
+  $anno_end_index += $prefix_length;
 
-  // Export all annotations created by the specified user.
-  $annotations = entity_load_multiple_by_name('annotation', $aids);
+  $anno_quote = str_replace("'", "''", $anno->quote); // Escape quotes for SQLite.
+  $anno_comment  = str_replace("'", "''", $anno->text);  // Escape quotes for SQLite.
+  $anno_date = date('Y-m-d H:i:s', $anno->updated);
+
+  // Write the SQLite record for this annotation.
+  // (Column "status = 1" means standard status, "status = 0" means deleted.)
+  $db->exec("INSERT INTO coding (cid, fid, seltext, selfirst, selend, status, owner, date, memo) VALUES (
+    '{$anno->tid}', '{$anno->nid}', '$anno_quote', '$anno_start_index', '$anno_end_index', 
+    1, '{$exporting_user->name}', '$anno_date', '{$anno_comment}' )");
+  watchdog('annotation', "Exported annotation {$anno->id}.");
+}
+
+/**
+ * Export the annotations with the given annotation IDs into the given RQDA database.
+ * 
+ * @param prefix_length Character count of metadata prepended to node content, indexed by entity type and entity ID.
+ */
+function annotation_export_annotations($aids, $prefix_length, $db, $exporting_user) {
   $db->exec('BEGIN TRANSACTION');  // Avoids implicit transaction (disk IO ops!) after every INSERT below.
+
+  $annotations = entity_load_multiple_by_name('annotation', $aids);
+
   foreach ($annotations as $aid => $anno) {
-    // Reload the node if the new annotation belongs to a different one.
-    // $annotations is ordered by node affiliation, see annotation_ids(). So every annotated node is loaded only once.
-    if ($anno->nid != $node->nid) {
-      $node = node_load($anno->nid);
+    if ($anno->entity_id == 'node') {
+      if (!isset($node) or $anno->nid != $node->nid) {
+        $node = node_load($anno->nid);
+        // $annotations is ordered by node affiliation, so nodes are not unnecesarily reloaded. See see annotation_ids().
+      }
+      annotation_export_node_annotation($anno, $node, $prefix_length['node'][$anno->nid], $db, $exporting_user);
     }
 
-    $anno_start_index = annotation_index($node, $anno, ANNOTATION_START);
-    if ($anno_start_index === FALSE) {
-      $message = "Could not export annotation with ID $aid: Could not determine character index for its start.";
-      watchdog('annotation', $message, array(), WATCHDOG_ERROR);
-      drupal_set_message($message, 'warning');
-      continue;
+    elseif ($anno->entity_id == 'comment') {
+      // TODO Implementation.
     }
-    $anno_start_index += $prefix_length[$node->nid];
-
-    $anno_end_index = annotation_index($node, $anno, ANNOTATION_END);
-    if ($anno_end_index === FALSE) {
-      $message = "Could not export annotation with ID $aid: Could not determine character index for its end.";
-      watchdog('annotation', $message, array(), WATCHDOG_ERROR);
-      drupal_set_message($message, 'warning');
-      continue;
-    }
-    $anno_end_index += $prefix_length[$node->nid];
-
-    $anno_quote = str_replace("'", "''", $anno->quote); // Escape quotes for SQLite.
-    $anno_comment  = str_replace("'", "''", $anno->text);  // Escape quotes for SQLite.
-    $anno_date = date('Y-m-d H:i:s', $anno->updated);
-
-    // Write the SQLite record for this ethnographic "coding".
-    // (Column "status = 1" means standard status, "status = 0" means deleted.)
-    $db->exec("INSERT INTO coding (cid, fid, seltext, selfirst, selend, status, owner, date, memo) VALUES (
-      '{$anno->tid}', '{$anno->nid}', '$anno_quote', '$anno_start_index', '$anno_end_index', 
-      1, '{$user->name}', '$anno_date', '{$anno_comment}' )");
-    watchdog('annotation', "Exported annotation {$anno->id}.");
   }
+
   $db->exec('COMMIT TRANSACTION');
+}
+
+/**
+ * Export all annotations of the specified user to the specified file.
+ *
+ * @return TRUE on success, FALSE in error cases.
+ *
+ * @see RQDA database schema docs: http://www.inside-r.org/packages/cran/RQDA/docs/RQDATables
+ */
+function annotation_export_rqda($uid, $filename) {
+  global $base_url; 
+  $user = user_load($uid);
+
+  // Initialze the target file with the database schema.
+  $db = new SQLite3($filename);
+  annotation_create_rqda_schema($db);
+
+  watchdog('annotation', 'Starting to export annotations.');
+
+  // Collect and export all content elements annotated by the specified user.
+  $content_ids = annotation_annotated_content($uid);
+  $prefix_length = array(); // Character count of metadata prepended to node content, indexed by entity type and entity ID.
+  $comment_prefix_length = array(); // Length of metadata prepended to comment content, indexed by node ID.
+  if (isset($content_ids['node'])) {
+    $prefix_length['node'] = annotation_export_nodes($content_ids['node'], $db, $user);
+  }
+  if (isset($content_ids['comment'])) {
+    $prefix_length['comment'] = annotation_export_comments($content_ids['comment'], $db, $user);
+  }
+
+  // Collect and export all annotation tags owned by the specified user (used or unused).
+  $tids = annotation_tids($uid);
+  annotation_export_tags($tids, $db, $user);
+
+  // Collect and export all annotations created by the specified user.
+  $aids = annotation_ids($uid);
+  annotation_export_annotations($aids, $prefix_length, $db, $user);
 
   watchdog('annotation', 'Finished exporting annotations.');
   return TRUE;

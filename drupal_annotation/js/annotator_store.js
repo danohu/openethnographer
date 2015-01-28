@@ -11,18 +11,18 @@
           'type': 'annotator'
         },
         loadFromSearch: function (that) {
-          // TODO Rework this to also properly determine a comment ID.
-          // TODO Rework this implementation to one where search parameters are handed by Drupal
-          //   rather than being determined from the rendered content. Because that is an 
-          //   "unprofessional" dependency on the presentation layer that easily breaks.
-          //   Example code: https://lists.okfn.org/pipermail/annotator-dev/2014-November/001246.html
+          // that.elememt is the DOM element used to instantiate Annotaor with. So we know it has the 
+          // attribute containing the metadata that need to find the annotations for this Annotator instance.
+          target = jQuery(that.element).attr('data-annotator-target').split('/');
+          // TODO Howvever, proper error handling would be good in cases where Annotator is going to be 
+          //   instantiated on a "bad tag", not having the data-annotator-target attribute.
+          
           return {
-            // TODO Determine the proper values for entity_type, field_* to use for this query.
-            'entity_type'    : 'node',
-            'entity_id'      : jQuery(that.element).parents('.node').attr('id').split('-')[1],
-            //'field_name'     : 'body',
-            //'field_delta'    : '0',
-            //'field_language' : 'en'
+            entity_type    : target[0],
+            entity_id      : target[1],
+            field_name     : target[2],
+            field_language : target[3],
+            field_delta    : target[4],
           };
         },
       });
