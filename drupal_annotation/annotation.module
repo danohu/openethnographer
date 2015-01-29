@@ -746,7 +746,10 @@ function annotation_index($node, $anno, $position){
  * 
  * Exporting is only done for those nodes for which the exporting user has view access. Node content, 
  * like all content, goes into so-called RQDA files (table "source").
- * 
+ *
+ * @param $exporting_user User who initiated the exporting. Her access rights determine which of the 
+ *   specified nodes will be exported.
+ *
  * @return, Array of prefix text lengths created and exported with the node text. Indexed by node ID.
  */
 function annotation_export_nodes($nids, $db, $exporting_user) {
@@ -820,6 +823,9 @@ function annotation_export_nodes($nids, $db, $exporting_user) {
 
 /**
  * Export the comments with the given comment IDs into the specified RQDA database.
+ *
+ * @param $exporting_user User who initiated the exporting. Her access rights determine which of the 
+ *   specified comments will be exported.
  * 
  * Comment content, like all content, goes into so-called RQDA files (table "source").
  */
@@ -829,6 +835,9 @@ function annotation_export_comments($cids, $db, $exporting_user) {
 
 /**
  * Export the tags with the given tag IDs into the specified RQDA database.
+ * 
+ * @param $exporting_user User who initiated the exporting. Her access rights determine which of the 
+ *   specified tags will be exported.
  */
 function annotation_export_tags($tids, $db, $exporting_user) {
   $db->exec('BEGIN TRANSACTION');  // Avoids implicit transaction (disk IO ops!) after every INSERT below.
@@ -837,12 +846,15 @@ function annotation_export_tags($tids, $db, $exporting_user) {
     $tag = taxonomy_term_load($tid);
     watchdog('annotation', "Debug: Exporting tag with Drupal tid {$tag->tid}.");
 
+    // TODO Export this tag only if $exporting_user has access to it.
+
     $tag_name = str_replace("'", "''", $tag->name); // Escape quotes for SQLite.
     $tag_description = drupal_html_to_text($tag->description);
     $tag_description = str_replace("'", "''", $tag_description); // Escape quotes for SQLite.
 
     // Write the SQLite record for this tag.
     // Column "status = 1" means standard status, "status = 0" means temp deleted.
+    // TODO Use the tag's author field to set freecode.owner.
     $db->exec(
       "INSERT INTO freecode (name, memo, owner, id, status) " .
       "VALUES ('$tag_name', '$tag_description', '{$exporting_user->name}', '{$tag->tid}', '1' )"
@@ -856,8 +868,12 @@ function annotation_export_tags($tids, $db, $exporting_user) {
  * Export the given node annotation into the given RQDA database.
  * 
  * @param prefix_length Character count of metadata prepended to node content.
+ * @param $exporting_user User who initiated the exporting. Her access rights determine which of the 
+ *   specified annotations will be exported.
  */
 function annotation_export_node_annotation($anno, $node, $prefix_length, $db, $exporting_user) {
+  
+  // Determine the character index of the start of the annotated text.
   $anno_start_index = annotation_index($node, $anno, ANNOTATION_START);
   if ($anno_start_index === FALSE) {
     $message = "Could not export annotation with ID $aid: Could not determine character index for its start.";
@@ -867,6 +883,7 @@ function annotation_export_node_annotation($anno, $node, $prefix_length, $db, $e
   }
   $anno_start_index += $prefix_length;
 
+  // Determine the character index of the start of the annotated text.
   $anno_end_index = annotation_index($node, $anno, ANNOTATION_END);
   if ($anno_end_index === FALSE) {
     $message = "Could not export annotation with ID $aid: Could not determine character index for its end.";
@@ -877,24 +894,33 @@ function annotation_export_node_annotation($anno, $node, $prefix_length, $db, $e
   $anno_end_index += $prefix_length;
 
   $anno_quote = str_replace("'", "''", $anno->quote); // Escape quotes for SQLite.
-  $anno_comment  = str_replace("'", "''", $anno->text);  // Escape quotes for SQLite.
+  $anno_url = "Permalink: " . url("annotation/{$anno->id}", array('absolute' => TRUE, 'alias' => TRUE));
+  $anno_comment  = str_replace("'", "''", $anno_url . PHP_EOL . PHP_EOL . $anno->comment);  // Escape quotes for SQLite.
   $anno_date = date('Y-m-d H:i:s', $anno->updated);
 
   // Write the SQLite record for this annotation.
   // (Column "status = 1" means standard status, "status = 0" means deleted.)
+  // TODO Use the tag's author field to set freecode.owner.
   $db->exec("INSERT INTO coding (cid, fid, seltext, selfirst, selend, status, owner, date, memo) VALUES (
     '{$anno->tid}', '{$anno->entity_id}', '$anno_quote', '$anno_start_index', '$anno_end_index',
     1, '{$exporting_user->name}', '$anno_date', '{$anno_comment}' )");
-  watchdog('annotation', "Exported annotation {$anno->id}.");
+
+  // watchdog('annotation', "Exported annotation {$anno->id}.");
 }
 
 /**
  * Export the annotations with the given annotation IDs into the given RQDA database.
  * 
- * @param prefix_length Character count of metadata prepended to node content, indexed by entity type and entity ID.
+ * TODO Remove the $exporting_user parameter from this function and all functions called by it. It is no longer needed to 
+ *   set the tag / annotation / content owner (rather its author name is used for this), and access right checks do not 
+ *   belong into the domain of a simple export function. Rather, they have to be called before (in this function below).
+ *
+ * @param $prefix_length Character count of metadata prepended to node content, indexed by entity type and entity ID.
+ * @param $exporting_user User who initiated the exporting. Her access rights determine which of the 
+ *   specified annotations will be exported.
  */
 function annotation_export_annotations($aids, $prefix_length, $db, $exporting_user) {
-  $db->exec('BEGIN TRANSACTION');  // Avoids implicit transaction (disk IO ops!) after every INSERT below.
+  $db->exec('BEGIN TRANSACTION'); // Avoids implicit transaction (disk IO ops!) after every INSERT in annotation_export_*_annotation() below.
 
   $annotations = entity_load_multiple_by_name('annotation', $aids);
 
@@ -918,6 +944,7 @@ function annotation_export_annotations($aids, $prefix_length, $db, $exporting_us
 /**
  * Export all annotations of the specified user to the specified file.
  *
+ * @param $uid User ID of the user whose annotations to export.
  * @return TRUE on success, FALSE in error cases.
  *
  * @see RQDA database schema docs: http://www.inside-r.org/packages/cran/RQDA/docs/RQDATables
