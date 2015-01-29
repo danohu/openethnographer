@@ -186,8 +186,16 @@ function annotator_annotation_alter($entity, $op) {
 function annotator_preprocess_field(&$variables) {
   $element = $variables['element'];
 
-  // Some fields might be rendered through theme_field() but are not Field API fields, e.g. Display Suite fields.
+  // Only mark Field API fields as annotateable.
+  //   Some fields might be rendered through theme_field() but are not Field API fields, e.g. Display Suite fields.
+  //   TODO This #skip_edit code below was probably inserted at another point by quickedit module code, which 
+  //   still has to be done in parallel in this module.
   if (!empty($element['#skip_edit'])) {
+    return;
+  }
+
+  // Do not allow annotating annotations - you know, endless recursion is dangerous for the universe.
+  if ($element['#entity_type'] == 'annotation') {
     return;
   }
 

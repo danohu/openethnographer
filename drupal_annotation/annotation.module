@@ -984,7 +984,7 @@ function annotation_extract($annotation, $len_before, $len_after){
     $highlight_snippet = substr($txt, $highlight_start, $highlight_end - $highlight_start);
 
     // Render the snippets plus markup.
-    $output = '<span class="annotator-extract-before">' . $pre_snippet . '</span><span class="annotator-extract-highlighted">' . $hl_snippet . '</span><span class="annotator-extract-after">' . $post_snippet . '</span>';
+    $output = '<span class="annotator-extract-before">' . $pre_snippet . '</span><span class="annotator-extract-highlighted">' . $highlight_snippet . '</span><span class="annotator-extract-after">' . $post_snippet . '</span>';
     if ($annotation->text != "") {
         $comment_snippet = '<span class="annotator-extract-comment-wrapper">, who said  "<span class="annotator-extract-comment">' . $annotation->text . '</span>" </span>';
     }

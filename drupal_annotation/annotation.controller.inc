@@ -65,7 +65,7 @@ class AnnotationAPIController extends EntityAPIController {
       ),
       '#formatter' => 'text_default',
       0 => array(
-          '#markup' => '<blockquote cite="' . check_plain($entity->uri) . '">' . annotation_extract($entity, 15, 15, false) . '</blockquote>'
+          '#markup' => '<blockquote cite="' . url("{$entity->entity_type}/{$entity->entity_id}") . '">' . annotation_extract($entity, 15, 15, false) . '</blockquote>'
       )
     );
 
