@@ -883,7 +883,7 @@ function annotation_export_node_annotation($anno, $node, $prefix_length, $db, $e
   // Write the SQLite record for this annotation.
   // (Column "status = 1" means standard status, "status = 0" means deleted.)
   $db->exec("INSERT INTO coding (cid, fid, seltext, selfirst, selend, status, owner, date, memo) VALUES (
-    '{$anno->tid}', '{$anno->nid}', '$anno_quote', '$anno_start_index', '$anno_end_index', 
+    '{$anno->tid}', '{$anno->entity_id}', '$anno_quote', '$anno_start_index', '$anno_end_index',
     1, '{$exporting_user->name}', '$anno_date', '{$anno_comment}' )");
   watchdog('annotation', "Exported annotation {$anno->id}.");
 }
@@ -899,15 +899,15 @@ function annotation_export_annotations($aids, $prefix_length, $db, $exporting_us
   $annotations = entity_load_multiple_by_name('annotation', $aids);
 
   foreach ($annotations as $aid => $anno) {
-    if ($anno->entity_id == 'node') {
-      if (!isset($node) or $anno->nid != $node->nid) {
-        $node = node_load($anno->nid);
+    if ($anno->entity_type == 'node') {
+      if (!isset($node) or $anno->entity_id != $node->nid) {
+        $node = node_load($anno->entity_id);
         // $annotations is ordered by node affiliation, so nodes are not unnecesarily reloaded. See see annotation_ids().
       }
-      annotation_export_node_annotation($anno, $node, $prefix_length['node'][$anno->nid], $db, $exporting_user);
+      annotation_export_node_annotation($anno, $node, $prefix_length['node'][$anno->entity_id], $db, $exporting_user);
     }
 
-    elseif ($anno->entity_id == 'comment') {
+    elseif ($anno->entity_type == 'comment') {
       // TODO Implementation.
     }
   }
