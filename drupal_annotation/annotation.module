@@ -808,13 +808,25 @@ function annotation_export_nodes($nids, $db, $exporting_user) {
     $node_title = field_get_items('node', $node, 'title_field')[0]['value'];
     $node_title = str_replace("'", "''", $node_title); // Escape quotes for SQLite.
 
+    // Obtain the name of the first (=main) node-type OG group that this node is member of.
+    // (For the data structure dealt with, see http://drupal.stackexchange.com/a/79350/16305 )
+    $group_memberships = og_get_entity_groups('node', $node);
+    if (isset($group_memberships['node'])) { // If there is a membership in a group of type "node".
+      $first_group_nid = reset($group_memberships['node']); // reset() gets the first value.
+      $first_group_node = node_load($first_group_nid);
+      $group_title = field_get_items('node', $first_group_node, 'title_field')[0]['value'] . ': ';
+    }
+    else {
+      $group_title = '';
+    }
+
     // Obtain the node updated field content and convert it as needed by SQLite3.
     $node_date = date('Y-m-d H:i:s', $node->changed);
 
     // Write the SQLite record for this ethnographic "file".
     // (Column "status = 1" means standard status, "status = 0" means temp deleted.)
     $db->exec("INSERT INTO source (name, id, file, owner, date, status) VALUES ( 
-      '$node_title', '{$node->nid}', '$node_text', '{$exporting_user->name}', '$node_date', '1' )");
+      '$group_title$node_title', '{$node->nid}', '$node_text', '{$exporting_user->name}', '$node_date', '1' )");
   }
   $db->exec('COMMIT TRANSACTION');
 
