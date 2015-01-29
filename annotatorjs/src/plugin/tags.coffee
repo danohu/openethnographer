@@ -140,7 +140,7 @@ class Annotator.Plugin.Tags extends Annotator.Plugin
     if annotation.tags and $.isArray(annotation.tags) and annotation.tags.length
       field.addClass('annotator-tags').html(->
         string = $.map(annotation.tags,(tag) ->
-              '<span class="annotator-tag"><a href="/taxonomy/term/' + annotation.tid + '">' +  Annotator.Util.escape(tag) + '</a></span>';
+              '<span class="annotator-tag"><a target="_blank" href="/taxonomy/term/' + annotation.tid + '">' +  Annotator.Util.escape(tag) + '</a></span>';
         ).join(' ')
       )
     else
