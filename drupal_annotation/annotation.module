@@ -378,23 +378,43 @@ function annotation_type_get_names() {
 }
 
 /**
+ * Implements hook_term_merge() from term_merge module.
+ *
+ * @param object $term_trunk
+ *   Fully loaded taxonomy term object of the term trunk, term into which
+ *   merging occurs, aka 'destination'
+ * @param object $term_branch
+ *   Fully loaded taxonomy term object of the term branch, term that is being
+ *   merged, aka 'source'
+ * @param array $context
+ *   Array $context as it is passed to term_merge_action() - you can get a
+ *   little more info about context about merging from this array
+ */
+function annotation_term_merge($term_trunk, $term_branch, $context) {
+
+  // Update all branch term references to reference trunk term instead.
+  $altered = db_update('annotation')
+    ->fields(array('tid' => $term_trunk->tid))
+    ->condition('tid', $term_branch->tid)
+    ->execute();
+}
+
+/**
  * Implements hook_taxonomy_term_delete().
  */
- 
-function annotation_taxonomy_term_delete($term)
-{
-    // remove all references to this term from the annotations table
+function annotation_taxonomy_term_delete($term) {
 
-    $altered = db_update('annotation')
-        ->fields(array('tid' => NULL))
-        ->condition('tid', $term->tid)
-        ->execute();
+  // Remove all references to this term from the annotations table.
+  $altered = db_update('annotation')
+    ->fields(array('tid' => NULL))
+    ->condition('tid', $term->tid)
+    ->execute();
 
-    // delete annotations which now have neither tag nor comment
-    $deleted = db_delete('annotation')
-        ->condition('tid', NULL)
-        ->condition('text', '')
-        ->execute();
+  // Delete annotations which now have neither tag nor comment.
+  $deleted = db_delete('annotation')
+    ->condition('tid', NULL)
+    ->condition('text', '')
+    ->execute();
 }
 
 /**
