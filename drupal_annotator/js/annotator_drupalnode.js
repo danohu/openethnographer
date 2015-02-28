@@ -43,6 +43,9 @@ Annotator.Plugin.DrupalNode = (function(_super) {
       'annotationsLoaded', 
       function(annotations) {
         jQuery('.annotator-hl').each(function() {
+	  tid = jQuery(this).data('annotation')['tid'];
+	  jQuery(this).attr('data-tid', tid);
+	 
           if (jQuery(this).data('annotation').user.uid == Drupal.settings.annotator_permissions.user.uid) {
             jQuery(this).addClass('annotator-own-annotation');
           }

@@ -243,15 +243,20 @@ class OpenethnographerTaxonomy extends TaxonomyDisplayTermDisplayHandler {
   public function displayTerm($term, $options = NULL) {
     $build = array();
     $build['term'] = array(
-        '#markup' => $this->quotation_list($term),
+        '#markup' => annotation_quotation_list($term),
         '#weight' => 0,
     );
     return $build;
   }
 
-  function annotations_by_node($nid, $termdivs, $term){
+
+  public function formFieldset(&$form, &$values, $options = NULL) {}
+  public function formSubmit($form, &$values) {}  
+}
+
+
+function annotation_annotations_by_node($nid, $termdivs, $term){
       $nd = node_load($nid);
-      $short_title = 'fubar';
       $divs = implode('', $termdivs);
       $header = '<div class="annotator-term-nodetitle">Annotations on <a href="' . url('node/'. $nid) . '">' . $nd->title .'</a>: </div>';
       $inner = '<div class="annotator-extractgroup">' . $divs . '</div>';
@@ -259,22 +264,18 @@ class OpenethnographerTaxonomy extends TaxonomyDisplayTermDisplayHandler {
       return $wrapped;
   }
 
-  function quotation_list($term){
+function annotation_quotation_list($term){
       $annots_by_nid = array();
       $ans = db_query("SELECT * from {annotation} where tid = :tid", array(':tid' => $term->tid));
       if($ans){
           while($row = $ans->fetchAssoc()){
-              $ent = current(entity_load('annotation', array($row['id'])));
-              $annots_by_nid[$ent->nid][] = annotation_extract($ent, 35, 25);
+              $annot = current(entity_load('annotation', array($row['id'])));
+              $annots_by_nid[$annot->entity_id][] = annotation_extract($annot, 35, 25);
           }
       }
       $nodedivs = array();
       foreach($annots_by_nid as $k=>$v){
-          $nodedivs[] = $this->annotations_by_node($k, $v, $term);
+          $nodedivs[] = annotation_annotations_by_node($k, $v, $term);
       }
       return implode(", ", $nodedivs);
   }  
-
-  public function formFieldset(&$form, &$values, $options = NULL) {}
-  public function formSubmit($form, &$values) {}  
-}

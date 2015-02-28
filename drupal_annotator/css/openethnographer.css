@@ -79,3 +79,32 @@
 
 }
 
+.annotator-taglist-tag {}
+
+.annotator-taglist-mytag {}
+
+.annotator-taglist-notmytag {}
+
+/* stop jquery-ui changing our background color */
+
+.ui-widget-content {
+    background: #ddd;
+    border: 0px;
+    }
+
+/* tidy up the sidebar */
+
+#anotacions-uoc-panel {
+    overflow-x: hidden;
+    overflow-y: default;
+    }
+
+.jqtree-element {
+    font-weight: lighter;
+    }
+
+
+ul.jqtree-tree li.jqtree-selected > .jqtree-element,
+ul.jqtree-tree li.jqtree-selected > .jqtree-element:hover {
+    font-weight: bold;
+    }
