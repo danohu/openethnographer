@@ -3,3 +3,8 @@
   z-index: 100090;
 }
 
+/* To compensate, we need to raise everything in Drupal that has to be before .ui-front further. */
+.ui-dialog, .ui-widget, .editor-image-dialog {
+  z-index: 100091 !important;
+}
+
