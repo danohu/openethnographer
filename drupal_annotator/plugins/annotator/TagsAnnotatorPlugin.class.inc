@@ -10,9 +10,7 @@ class TagsAnnotatorPlugin extends AnnotatorPlugin {
     $tags = array(); 
     $term_tree = taxonomy_get_tree($vid);
     foreach($term_tree as $term){
-      if($term->uid == $user->uid){
         $tags[] = $term->name;
-      }
     }
     drupal_add_js(array('autocomplete_terms' => $tags), 'setting');
 
