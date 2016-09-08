@@ -37,16 +37,43 @@ function annotation_api_endpoint($id = NULL) {
 }
 
 /**
- * Annotation API root
+ * API for tags, to populate the sidebar
  */
-function annotation_api() {
-  drupal_json_output(
-    array(
-      'name' => 'Annotator Store API',
-      'version' => ANNOTATOR_VERSION,
-    )
-  );
+function visible_tags($nid){
+    $vocabulary = taxonomy_vocabulary_machine_name_load('openethnographer');
+    $tree = taxonomy_get_tree($vocabulary->vid);
+    // XXX this needs to handle public/private tags
+    if(!user_access('view any annotations') ) {
+        $tree = array_filter($tree, function($k){
+            return $k->uid != $USER->uid;});
+    }
+    //$parents = array_filter($tree, function($k){
+    return $tree;
 }
+
+
+function annotation_api_quotation_list(){
+    $tid = $_GET['tid'];
+    $term = taxonomy_term_load($tid);
+    print("<h2>Content tagged $term->name</h2><br/>");# " + $term->name + "</h2>");
+    print(annotation_quotation_list($term));
+}
+
+
+
+function annotation_api_tags(){
+    //XXX filter tags to those present on a page
+    // -- complication is that we also need all their ancestors
+    if(!empty($_GET['nid'])){
+        $nid = $_GET['nid'];
+    }
+
+    $vocabulary = taxonomy_vocabulary_machine_name_load('openethnographer');
+    $tree = taxonomy_get_tree($vocabulary->vid);
+    watchdog('oeth', 'I am a teapot');
+    return drupal_json_output(visible_tags());
+}
+        
 
 /**
  * Annotation API index
@@ -185,9 +212,8 @@ function annotation_api_search() {
   $query = new EntityFieldQuery();
   $query->entityCondition('entity_type', 'annotation'); // Not related to the annotaton.entity_type field name, but to the Drupal concept.
 
-  // Add conditions to query from the allowed and sanitized values determined above.
-  // TODO Check if the use of LIKE below is correct: do we need it for all text columns?
-  if ($uid) {
+  if (isset($uid) && $uid) {
+    // Use uid instead of user
     $query->propertyCondition('uid', $uid);
   }
   if ($id) {

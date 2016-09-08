@@ -281,6 +281,21 @@ function annotation_menu() {
     'file' => 'annotation.store.inc',
   );
 
+  $items['annotation/api/tags'] = array(
+    'page callback' => 'annotation_api_tags',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'annotation.store.inc',
+  );
+
+  $items['annotation/api/quotation_list'] = array(
+    'page callback' => 'annotation_api_quotation_list',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'annotation.store.inc',
+  );
+
+
   return $items;
 }
 
@@ -1026,7 +1041,6 @@ function annotation_export_rqda($uid, $filename) {
  * @return String containing HTML that renders the annotated text in its context.
  */
 function annotation_extract($annotation, $len_before, $len_after){
-
     // Get the HTML source text of the annotated field.
     $entity = entity_load_single($annotation->entity_type, $annotation->entity_id);
     $field_items = field_get_items($annotation->entity_type, $entity, $annotation->field_name, $annotation->field_language);
