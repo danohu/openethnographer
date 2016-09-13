@@ -75,7 +75,7 @@ class Annotator.Viewer extends Annotator.Widget
     controls = @element
       .find('.annotator-controls')
       .addClass(@classes.showControls)
-    setTimeout((=> controls.removeClass(@classes.showControls)), 500)
+    #setTimeout((=> controls.removeClass(@classes.showControls)), 500)
 
     @element.removeClass(@classes.hide)
     this.checkOrientation().publish('show')
