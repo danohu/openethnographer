@@ -1,6 +1,6 @@
 ## Open Ethnographer for Drupal
 
-**Note:** _The Edgeryders OÜ company does no longer develop or support this strain of the Open Ethnographer software and we consider it legacy code. Instead, you may be interested in [Open Ethnographer for Discourse](https://edgeryders.eu/t/6811). Its code._
+**Note:** _The Edgeryders OÜ company does no longer develop or support this strain of the Open Ethnographer software and we consider it legacy code. Instead, you may be interested in [Open Ethnographer for Discourse](https://edgeryders.eu/t/6811)._
 
 
 ### What is this?
