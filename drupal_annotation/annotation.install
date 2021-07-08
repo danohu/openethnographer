@@ -20,30 +20,54 @@ function annotation_schema() {
         'not null' => TRUE,
         'default' => '',
       ),
-      'language' => array(
-        'description' => 'The {languages}.language of this node.',
+      'entity_type' => array(
+        'description' => t('entity type of the annotated entity'),
         'type' => 'varchar',
-        'length' => 12,
+        'length' => 128,
+        'not null' => TRUE,
+      ),
+      // TODO Delete this later after migrating all code from nid to entity_id.
+      /*
+      'nid' => array(
+        'description' => t('id of the annotated entity'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+      ),
+      */
+      'entity_id' => array(
+        'description' => t('id of the annotated entity'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+      ),
+      /* Revision is not implemented as annotations should eventually apply to all revisions, using word IDs.
+      'revision_id' => array(
+        'description' => t('id of the annotated entity'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+      ), */
+      // The field bundle ("node type") does not have to be recorded ina field, because a field name is unique per entity type.
+      // See for example the body field, which belongs to entity_type node but can be configured per instance (=for each bundle).
+      'field_name' => array(
+        'description' => t('field name of the annotated field of the annotated entity'),
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+      ),
+      'field_delta' => array(
+        'description' => t('index of the annotated field value in multi-value fields'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+      ),
+      'field_language' => array(
+        'description' => 'The {languages}.language version of the annotated field.',
+        'type' => 'varchar',
+        'length' => 32,
         'not null' => TRUE,
         'default' => '',
-      ),
-      'created' => array(
-        'description' => 'The creation datetime of the annotation.',
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'updated' => array(
-        'description' => 'The updated datetime of the annotation.',
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'text' => array(
-        'description' => 'content of annotation',
-        'type' => 'text',
-        'size' => 'big',
-        'not null' => FALSE,
       ),
       'quote' => array(
         'description' => 'The text of this annotation.',
@@ -51,12 +75,23 @@ function annotation_schema() {
         'size' => 'big',
         'not null' => TRUE,
       ),
-      'uri' => array(
-        'description' => 'Type uri of this annotation.',
+      'text' => array(
+        'description' => 'content of annotation',
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => FALSE,
+      ),
+      'language' => array(
+        'description' => 'The {languages}.language of the annotation text.',
         'type' => 'varchar',
-        'length' => 2048, // Maximum URLs length.
+        'length' => 32,
         'not null' => TRUE,
-        'sortable' => TRUE
+        'default' => '',
+      ),
+      'tid' => array(
+        'description' => t('id of a taxonomy term for this annotation'),
+        'type' => 'int',
+        'not null' => FALSE,
       ),
       'ranges' => array(
         'description' => 'The ranges of the annotation.',
@@ -71,27 +106,31 @@ function annotation_schema() {
         'not null' => TRUE,
         'default' => 0,
       ),
-      'nid' => array(
-        'description' => t('id of the node to which the annotation applies'),
+      'created' => array(
+        'description' => 'The creation datetime of the annotation.',
         'type' => 'int',
-        'not null' => FALSE,
+        'not null' => TRUE,
         'default' => 0,
       ),
-      'tid' => array(
-        'description' => t('id of a taxonomy tag for this annotation'),
+      'updated' => array(
+        'description' => 'The updated datetime of the annotation.',
         'type' => 'int',
-        'not null' => FALSE,
+        'not null' => TRUE,
         'default' => 0,
       ),
     ),
     'indexes' => array(
       'uid' => array('uid'),
-      'nid' => array('nid'),
+      'entity_type' => array('entity_type'),
+      'entity_id' => array('entity_id'),
+      'field_name' => array('field_name'),
+      'field_delta' => array('field_delta'),
       'tid' => array('tid'),
       'annotation_updated' => array('updated'),
       'annotation_created' => array('created'),
       'annotation_type' => array(array('type', 4)),
     ),
+    // TODO List entity_type and field_name as foreign keys if this is usually done in the Drupal database.
     'foreign keys' => array(
       'uid' => array(
         'table' => 'users',
@@ -110,15 +149,33 @@ function annotation_schema() {
 /**
  * Implements hook_install().
  */
-function annotation_install(){
+function annotation_install() {
+
+  // Create a taxonomy vocabulary for annotation tags.
   $existing = taxonomy_vocabulary_machine_name_load('openethnographer');
   if(!$existing){
-	$vocab = new stdClass();
-	$vocab->name = "Open Ethnographer";
-	$vocab->machine_name = 'openethnographer';
-	$vocab->description = 'Annotation classifications added by Open Ethnographer users';
-	taxonomy_vocabulary_save($vocab);
+    $vocab = new stdClass();
+    $vocab->name = "Open Ethnographer";
+    $vocab->machine_name = 'openethnographer';
+    $vocab->description = 'Annotation classifications added by Open Ethnographer users';
+    taxonomy_vocabulary_save($vocab);
 	}
+
+  // Add uid field (for author) to taxonomy terms.
+  //   (This is not a Field UI field, so not visible at /admin/structure/taxonomy/openethnographer/fields. Instead, it is an 
+  //   internal field similar to node and comment creation date. This is needed to prevent permission cheating by users editing it.)
+  db_add_field('taxonomy_term_data', 'uid',
+    array( // field details
+      'type' => 'int',
+      'not null' => false, # we need to deal with deleted users, right?
+      'default' => null,
+      'description' => 'User who created this taxonomy term',
+    ),
+    array( // options
+      'indexes' => array(
+      'uid' => array('uid'))
+    )
+  );
 }
 
 
@@ -127,4 +184,22 @@ function annotation_install(){
  */
 function annotation_uninstall() {
   variable_del('annotator_store');
+
+  db_drop_field('taxonomy_term_data', 'uid');
 }
+
+
+/**
+ * Implements hook_schema_alter().
+ *
+ * Records the addition of the uid field to taxonomy terms, see annotation_install().
+ */
+function annotation_schema_alter(&$schema) {
+  $schema['taxonomy_term_data']['fields']['uid'] = array(
+    'type' => 'int',
+    'not null' => false, # we need to deal with deleted users, right?
+    'default' => null,
+    'description' => 'User who created this taxonomy term',
+  );
+}
+

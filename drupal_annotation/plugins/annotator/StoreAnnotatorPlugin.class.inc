@@ -1,9 +1,19 @@
 <?php
 
 /**
- * Annotator ctools plugin
+ * Implementation of StoreAnnotatorPlugin.
+ *
+ * StoreAnnotatorPlugin is a plugin for Drupal module "annotator", using the CTools plugin mechanism. In turn, this 
+ * CTools plugin contains an Annotator JS plugin "Store", in file js/annotator_store.js. Annotator JS is a library 
+ * used in Drupal module "annotator", and comes with its own plugin mechanism. Sorry for the confusion.
  */
 class StoreAnnotatorPlugin extends AnnotatorPlugin {
+
+  /**
+   * Settings form for this CTools plugin.
+   * 
+   * The form can be found at admin/config/content/annotator, section "Store".
+   */
   public function settingsForm() {
     $defaults = $this->settings();
     $form['prefix'] = array(
@@ -47,6 +57,11 @@ class StoreAnnotatorPlugin extends AnnotatorPlugin {
     return $form;
   }
 
+  /**
+   * Initialize the settings form of this CTools plugin.
+   *
+   * @see settingsForm()
+   */
   public function settings($defaults = array()) {
     $defaults = array(
       'prefix' => base_path() . 'annotation/api',
@@ -66,6 +81,9 @@ class StoreAnnotatorPlugin extends AnnotatorPlugin {
   public function setup() {
     $settings = $this->settings();
     drupal_add_js(array('annotator_store' => (array) $settings), 'setting');
+
+    // Make the Annotator JS plugin "Store" available.
     drupal_add_js(drupal_get_path('module', 'annotation') . '/js/annotator_store.js');
   }
 }
+

@@ -157,7 +157,11 @@ class Annotator extends Delegator
     sel = '*' + (":not(.annotator-#{x})" for x in ['adder', 'outer', 'notice', 'filter']).join('')
 
     # use the maximum z-index in the page
-    max = Util.maxZIndex($(document.body).find(sel))
+    # max = Util.maxZIndex($(document.body).find(sel)) # Previous implementation, removed b/c it costs 40% of Annotator setup's CPU time.
+    # TODO Implement a better fix than a static value here. Possibly, the dynamic max z-index code can be removed completely, 
+    #   relying on the CSS that also already defines this. Or even better, a config parameter would decide whether to use dynamic 
+    #   determination or a supplied value (CSS or static).
+    max = 100000
 
     # but don't go smaller than 1010, because this isn't bulletproof --
     # dynamic elements in the page (notifications, dialogs, etc.) may well

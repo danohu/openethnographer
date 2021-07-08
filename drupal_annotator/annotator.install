@@ -1,6 +1,25 @@
 <?php
 
 /**
+ * Implements hook_install().
+ */
+function annotator_install() {
+
+  // Make this module heavier (=executed later) than the rdf module, to work around Drupal Core issue #1940986.
+  //   (see https://www.drupal.org/node/1940986#comment-9558669 )
+  // TODO Remove once the issue got fixed.
+  $rdf_weight = db_select('system', 's')
+    ->fields('s', array('weight'))
+    ->condition('name', 'rdf', '=')
+    ->execute()
+    ->fetchField();
+  db_update('system')
+    ->fields(array('weight' => $rdf_weight + 1))
+    ->condition('name', 'annotator', '=')
+    ->execute();
+}
+
+/**
  * Implements hook_uninstall().
  */
 function annotator_uninstall() {

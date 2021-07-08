@@ -1,0 +1,10 @@
+/* jQuery default is 100, but we need more to get the autocomplete on top of Annotator.*/
+.ui-front {
+  z-index: 100090;
+}
+
+/* To compensate, we need to raise everything in Drupal that has to be before .ui-front further. */
+.ui-dialog, .ui-widget, .editor-image-dialog {
+  z-index: 100091 !important;
+}
+
